@@ -1,0 +1,17 @@
+noise-barrier-calc — Noise barrier attenuation calculator
+Copyright 2026 Stefano Fante
+
+This product includes software developed by Stefano Fante (https://github.com/stefanofante).
+Maintained as part of the Open Lab activities of ST-LINE S.r.l. (https://stline.it).
+
+Third-party dependencies bundled or referenced (all under permissive licenses):
+
+  Leaflet            — BSD-2-Clause   — https://leafletjs.com
+  PapaParse          — MIT            — https://www.papaparse.com
+  d3-contour         — ISC            — https://github.com/d3/d3-contour
+
+Map data:
+  © OpenStreetMap contributors — ODbL 1.0 — https://www.openstreetmap.org/copyright
+
+This tool shares its acoustic propagation engine with acmap:
+  https://github.com/stefanofante/acmap

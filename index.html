@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>noise-barrier-calc · pre-development</title>
+<style>
+  body {
+    margin: 0;
+    background: #16181C;
+    color: #e9e6df;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+  }
+  .container {
+    max-width: 620px;
+    text-align: left;
+  }
+  .eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: #E0A95D;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .eyebrow .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #E0A95D;
+    box-shadow: 0 0 6px #E0A95D;
+  }
+  h1 {
+    font-size: clamp(28px, 4vw, 44px);
+    line-height: 1.1;
+    font-weight: 600;
+    margin: 0 0 18px;
+    letter-spacing: -0.02em;
+  }
+  em { color: #E0A95D; font-style: normal; }
+  p { color: #b6b3ac; }
+  .status {
+    border: 1px solid #2A2D33;
+    border-radius: 8px;
+    padding: 20px 24px;
+    background: #1c1d20;
+    margin: 28px 0;
+  }
+  .status strong { color: #e9e6df; }
+  ul li { margin-bottom: 6px; color: #b6b3ac; }
+  a { color: #E0A95D; }
+  code {
+    font-family: "JetBrains Mono", "Fira Mono", monospace;
+    background: #1E2025;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+    color: #e9e6df;
+  }
+  .links {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid #2A2D33;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+  }
+  .links a {
+    display: inline-block;
+    margin-right: 18px;
+    text-decoration: none;
+    color: #E0A95D;
+  }
+  .links a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <p class="eyebrow"><span class="dot"></span>OPEN LAB · ACUSTICA</p>
+  <h1>noise-barrier-calc <em>·</em> pre-development</h1>
+
+  <p>
+    This is a placeholder. The repository structure, license, and
+    documentation are in place. The tool itself is not yet implemented.
+  </p>
+
+  <div class="status">
+    <strong>Planned tool</strong><br>
+    Browser-based calculator for noise barrier attenuation, using
+    ISO 9613-2 Maekawa diffraction. Single-source, single-barrier,
+    single-receiver or grid. Shares its physics engine with
+    <code>acmap</code>.
+  </div>
+
+  <p>
+    Development is scheduled after the integration of the companion
+    <code>acmap</code> tool into the ST-LINE website. See the project
+    <a href="https://github.com/stefanofante/noise-barrier-calc">README</a>
+    for the full roadmap and motivation.
+  </p>
+
+  <p>
+    <strong>If you want to be notified</strong> when the first working
+    version ships, watch the GitHub repository.
+  </p>
+
+  <div class="links">
+    <a href="https://github.com/stefanofante/noise-barrier-calc">Repository ↗</a>
+    <a href="https://github.com/stefanofante/acmap">Companion: acmap ↗</a>
+    <a href="https://stline.it/open-lab">ST-LINE Open Lab ↗</a>
+  </div>
+
+</div>
+</body>
+</html>
