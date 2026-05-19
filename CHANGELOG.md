@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] — 2026-05-19
+
+### Added
+- Full EN UI with IT/EN runtime toggle (complete string dictionary, 117+ keys)
+- OSM buildings via Overpass API as passive obstacles (worst-screen-wins, one obstacle per source-receiver pair)
+- Spatial scene filter: only buildings within the scene bbox (source ∪ barrier ∪ receiver-grid + 10 m buffer) participate; "X of Y" participation badge
+- Geolocate control (📍 top-left, localStorage-persisted last center)
+- Screenshot export (📷 top-right, composite map + legend + results PNG; html2canvas lazy-loaded)
+- Spectrum info popover: description, mode-aware formula, octave-band mini bar chart
+
+### Changed
+- Single-file standalone now loads Leaflet / d3-contour / html2canvas from CDN (was vendored)
+- Fluid bottom-panel layout (no internal scroll; mobile-responsive)
+- Ctrl/Cmd + wheel zoom guard with on-map hint (page scroll otherwise)
+
+### Technical
+- Physics/OSM/screenshot extracted verbatim from the ST-LINE site shared modules (develop HEAD, post-ef726c7); ISO 9613-2 §7.4 + Maekawa unchanged
+- Synced with src/components/BarrierCalculator.astro
+
 ## [0.6.0] — 2026-05-18
 
 ### Added

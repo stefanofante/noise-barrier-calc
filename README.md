@@ -1,65 +1,81 @@
 # noise-barrier-calc
 
+[![Status: v0.7](https://img.shields.io/badge/status-v0.7_working-orange.svg)](#status)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Status: v0.6](https://img.shields.io/badge/status-v0.6_working-green.svg)](#status)
-[![Standards: ISO 9613-2](https://img.shields.io/badge/standards-ISO_9613--2_%C2%A77.4-orange.svg)](#physics)
+[![Standards: ISO 9613-2 §7.4](https://img.shields.io/badge/standards-ISO_9613--2_%C2%A77.4-orange.svg)](#physics)
 
-> **Browser-based acoustic barrier insertion-loss calculator.**
-> Place a source (point, line or area), draw a barrier on the map, and the tool
-> computes how much noise the barrier blocks at every point of a receiver grid.
+> **IT** — Calcolatore di Insertion Loss di barriere acustiche, single-file, in browser.
+> **EN** — Single-file, browser-based acoustic-barrier insertion-loss calculator.
 
-Demonstration tool for **environmental acoustics**, runs entirely in the browser.
-Companion to [acmap](https://github.com/stefanofante/acmap) (acoustic mapping), sharing the same physics engine.
+Place a source (point, line or area), draw a barrier on the map, optionally
+download OSM buildings as passive obstacles, and the tool computes how much
+noise the barrier blocks at every point of a receiver grid.
+
+Demonstration tool for **environmental acoustics**, runs entirely in the
+browser. Companion to [acmap](https://github.com/stefanofante/acmap)
+(acoustic mapping), sharing the same physics engine.
+
+A single `index.html`. No build, no bundler, no server.
 
 ---
 
-## What it does
+## Features
 
-- **Three source types** selectable on the map:
-  - **Linear** (road, railway): polyline with `Lw'` in dB per meter
-  - **Areal** (industrial zone, parking lot): rectangle with `Lw''` in dB per m²
-  - **Point** (single machinery, fan, exhaust): single click with total `Lw` in dB
-- **Acoustic barrier** as polyline with adjustable height
-- **Receiver grid** configurable extent and step
-- **Two diffraction methods** selectable:
-  - **ISO 9613-2:1996 §7.4** (default, conservative, with K<sub>met</sub> meteorological correction)
-  - **Maekawa (1968)** (original formula, max 25 dB)
-- **Visualization**:
-  - Filled contour bands at 5 dB intervals (default)
-  - Isolines at 5 dB
-  - Individual receiver points (optional)
-  - Continuous color legend with all 5 dB tick marks
-  - Metric grid overlay (5–25m, zoom-adaptive)
-- **Vertical cross-section**: click any receiver to see source→barrier→receiver
-  path geometry with diffraction details
-- **CSV export** of receiver grid with coordinates and dB values
-- **Spinner with progress %** during background calculation
-- **Responsive UI** — calculation chunked, map stays interactive
+- ✅ **ISO 9613-2:1996 §7.4 diffraction** (default) — full screening formula with
+  meteorological correction K<sub>met</sub> (downwind), C2=20, C3=1, max 20 dB single
+- ✅ **Maekawa (1968)** alternative — original Fresnel-number formula, max 25 dB
+- ✅ **Three source types** — linear (`Lw'` dB/m), areal (`Lw''` dB/m²), point (`Lw` dB)
+- ✅ **Acoustic barrier** as polyline with adjustable height + base elevation
+- ✅ **OSM buildings via Overpass API** as passive obstacles
+  (worst-screen-wins: one obstacle per source–receiver pair)
+- ✅ **Spatial scene filter** — only buildings inside the scene bbox
+  (source ∪ barrier ∪ receiver-grid + 10 m buffer) participate; "X of Y" badge
+- ✅ **IT / EN UI toggle** — full runtime string dictionary (117+ keys per language),
+  persisted to `localStorage`
+- ✅ **Filled IL contour bands** at 5 dB (default), isolines at 5 dB, receiver points,
+  zoom-adaptive metric grid (5–25 m)
+- ✅ **Vertical cross-section** — click any receiver for source→barrier→receiver
+  geometry with δ path-difference and IL
+- ✅ **Spectrum info popover** — description, mode-aware formula, octave-band
+  mini bar chart
+- ✅ **Geolocate control** (📍 top-left, last center persisted)
+- ✅ **Screenshot export** (📷 top-right, composite map + legend + results PNG;
+  html2canvas lazy-loaded on first click)
+- ✅ **CSV export** of the receiver grid (coords, distance, Leq, IL, diffracted)
+- ✅ **Light / dark theme** toggle (persisted), responsive fluid layout
+- ✅ **Fully client-side** — your data never leaves the browser
+  (internet only needed on first load for CDN libs, OSM tiles, Overpass)
 
-## What it does NOT do
+---
 
-This is a **demonstration tool**. It does not replace certified software
-(CadnaA, SoundPLAN, NoiseModelling) for legal/peritial barrier design.
-Specifically not modeled:
+## Quick start
 
-- Multi-barrier in cascade (C<sub>3</sub> fixed to 1 in ISO 9613-2)
-- Lateral diffraction around barrier edges
-- Sound transmission through the barrier (assumed opaque)
-- Reflections from source side or between barriers
-- NMPB-Routes-2008 for road sources (traffic flow modeling)
-- NMPB-Fer for railway sources
-- CNOSSOS-EU complete framework
-- Profiled meteorology (vertical wind/temperature gradients)
-- Real spectra from measurements (provides stylized presets only)
+**Open `index.html` in a modern browser. No build, no server.**
 
-For certified barrier design, consult a registered acoustic engineer or use
-omologated software.
+> First load needs internet access: the page pulls Leaflet, d3-contour and
+> (lazily) html2canvas from CDN, the OpenStreetMap tiles, and — only when you
+> click "Download buildings" — the Overpass API. After that all computation is
+> local; user-drawn geometry never leaves the page.
+
+### Workflow
+
+1. Select source type (line / area / point)
+2. Choose spectrum preset and set `Lw'`, `Lw''`, or `Lw`
+3. Click "Draw on map" and place the source
+4. Set barrier height + base elevation, draw the barrier
+5. Select diffraction method (ISO 9613-2 default)
+6. Adjust receiver grid, atmosphere, DPCM class as needed
+7. (Optional) "Download buildings" → toggle "Buildings participate in calculation"
+8. Click "Compute" — watch the progress spinner
+9. Inspect the heatmap (filled bands + isolines)
+10. Click "Vertical cross-section" → click any receiver for geometry
+11. "Export receivers CSV" / 📷 screenshot as needed
 
 ---
 
 ## Status
 
-**v0.6 working** — functional prototype, browser-based.
+**v0.7 working** — functional prototype, browser-based.
 
 | Version | Status | Highlights |
 |---------|--------|------------|
@@ -69,60 +85,35 @@ omologated software.
 | v0.4    | done   | ISO 9613-2 §7.4 complete formula (C2, C3 placeholder, K<sub>met</sub>) + method toggle |
 | v0.5    | done   | Metric grid overlay (5m visual reference), responsive chunked calc, progress spinner |
 | v0.6    | done   | Filled contour bands at 5 dB, continuous color legend with tick marks |
-| v0.7+   | planned | Multi-barrier cascade, lateral diffraction, source spectra from CSV |
+| v0.7    | done   | EN i18n + IT/EN runtime toggle, OSM buildings (Overpass) as passive obstacles, spatial scene filter + participation badge, geolocate, screenshot export, spectrum info popover; libs via CDN |
+| v0.8+   | planned | Multi-barrier cascade, lateral diffraction, source spectra from CSV |
 
-## How to use
+---
 
-### Online (when integrated)
+## What it does NOT do
 
-Will be available at `stline.it/tools/calcolo-barriere/` (see [stline.it/tools/](https://stline.it/tools/)).
+This is a **demonstration tool**. It does not replace certified software
+(CadnaA, SoundPLAN, NoiseModelling) for legal/peritial barrier design.
+See the in-tool disclaimer strip for the full statement. Specifically:
 
-### Local
+- Single-screen "worst-screen-wins" obstacle model (one obstacle per
+  source–receiver pair) — **not** rigorous multi-screen ISO 9613-2
+- Multi-barrier in cascade (C<sub>3</sub> fixed to 1 in ISO 9613-2)
+- Lateral diffraction around barrier edges
+- Sound transmission through the barrier (assumed opaque)
+- Reflections from source side or between barriers
+- NMPB-Routes-2008 / NMPB-Fer / CNOSSOS-EU frameworks
+- Profiled meteorology (vertical wind/temperature gradients)
+- Stylized preset spectra only — not real measured spectra
 
-1. Clone the repo:
-   ```bash
-   git clone https://github.com/stefanofante/noise-barrier-calc.git
-   cd noise-barrier-calc
-   ```
-
-2. Fetch vendored libraries (Leaflet, d3-contour):
-   ```bash
-   bash scripts/fetch-vendor.sh
-   ```
-
-3. Serve over HTTP (NOT `file://` — Leaflet tiles won't load):
-   ```bash
-   # Linux/macOS
-   python3 -m http.server 8000
-
-   # Windows PowerShell
-   cd $env:USERPROFILE\<repo-path>
-   python -m http.server 8000
-   ```
-
-4. Open `http://localhost:8000/` in your browser.
-
-### Quick workflow
-
-1. Select source type (linear / areal / point)
-2. Choose spectrum preset and set `Lw'`, `Lw''`, or `Lw`
-3. Click "Draw on map" and place the source
-4. Set barrier height + base elevation
-5. Click "Draw on map" for the barrier and place it
-6. Select diffraction method (ISO 9613-2 default)
-7. Adjust receiver grid, atmosphere, DPCM class as needed
-8. Click "Calculate" — watch the progress spinner
-9. Inspect the heatmap with filled bands and isolines
-10. Click "Vertical cross-section" → click any receiver for geometry
-11. Click "Export CSV" to download the receiver grid
+For certified barrier design, consult a registered acoustic engineer
+(in Italy: *Tecnico Competente in Acustica* registered with ENTECA).
 
 ---
 
 ## Physics
 
-The tool implements the standard outdoor sound propagation model.
-
-For each source point → receiver pair:
+Standard outdoor sound propagation model. For each source point → receiver pair:
 
 | Term | Standard | Description |
 |------|----------|-------------|
@@ -158,18 +149,25 @@ C3 = 1                      (single barrier; ≠1 for double — not implemented
 z = δ                       (path difference)
 Kmet = exp(-(1/2000)·√(d_ss·d_sr/(2z)))   (downwind meteorological correction)
 ```
-Max attenuation: 20 dB (single barrier), 25 dB (double, when C3 implemented).
+Max attenuation: 20 dB (single barrier).
 
-The two formulas converge when ISO 9613-2 uses C2=40, K<sub>met</sub>=1, but the
-standard formula (C2=20) is consistently 1-3 dB more conservative than Maekawa
-in the mid-frequency range, and includes meteorological correction reducing
-effectiveness over long distances (>500m downwind).
+The standard formula (C2=20) is consistently 1–3 dB more conservative than
+Maekawa in the mid-frequency range, and includes a meteorological correction
+reducing effectiveness over long distances (>500m downwind).
+
+### OSM buildings (worst-screen-wins)
+
+When "Buildings participate in calculation" is active, OSM building footprints
+(downloaded via Overpass) act as opaque obstacles. For each source–receiver
+pair, the single obstacle (barrier or building) with the **largest**
+path-difference δ is used. Heights come from OSM `height` /
+`building:levels` tags, falling back to a user-set default. This is **not**
+rigorous multi-screen; real cascaded attenuation is typically higher.
 
 ### Total receiver level
 
-All per-band sound pressures are A-weighted and summed energetically across
-the spectrum. Then contributions from all source points are summed energetically
-at the receiver:
+Per-band sound pressures are A-weighted and summed energetically across the
+spectrum, then across all source points:
 
 ```
 Leq_A = 10·log10(Σ_points Σ_bands 10^((Lp_band + A_weight)/10))
@@ -181,8 +179,8 @@ Leq_A = 10·log10(Σ_points Σ_bands 10^((Lp_band + A_weight)/10))
 
 ## References
 
-- **ISO 9613-1:1993** — Acoustics — Attenuation of sound during propagation outdoors. Part 1: Calculation of the absorption of sound by the atmosphere
-- **ISO 9613-2:1996** — Acoustics — Attenuation of sound during propagation outdoors. Part 2: General method of calculation
+- **ISO 9613-1:1993** — Acoustics — Attenuation of sound during propagation outdoors. Part 1: absorption of sound by the atmosphere
+- **ISO 9613-2:1996** — Acoustics — Attenuation of sound during propagation outdoors. Part 2: general method of calculation (incl. §7.4 screening)
 - Maekawa, Z. (1968). *Noise reduction by screens*. Applied Acoustics, 1(3), 157–173
 - **DPCM 14/11/1997** — Determinazione dei valori limite delle sorgenti sonore (Italian acoustic zoning)
 
@@ -190,12 +188,15 @@ Leq_A = 10·log10(Σ_points Σ_bands 10^((Lp_band + A_weight)/10))
 
 ## Tech stack
 
-- **Vanilla JavaScript** (no bundler, no build pipeline)
-- **Single-file HTML** (`index.html`) — ~2400 lines, ~90KB
-- **Vendored libraries** (`vendor/`, fetched by script):
+- **Vanilla JavaScript** (ES2020+), no bundler, no build pipeline
+- **Single-file HTML** (`index.html`) — physics/OSM/screenshot logic inlined
+  verbatim from the ST-LINE site shared modules
+- Libraries via CDN (true single-file standalone):
   - [Leaflet 1.9.4](https://leafletjs.com) — BSD 2-Clause
   - [d3-contour 4.0.2](https://github.com/d3/d3-contour) — ISC
-- **OpenStreetMap tiles** (ODbL)
+  - [html2canvas 1.4.1](https://html2canvas.hertzen.com) — MIT (lazy-loaded on first screenshot)
+- **OpenStreetMap tiles** (ODbL) · **Overpass API** for buildings
+- Physics: **ISO 9613-2:1996 §7.4** + **Maekawa 1968**
 - **No backend, no analytics, no tracking** — fully client-side
 
 User data (source, barrier, receivers) never leaves the browser.
@@ -212,17 +213,20 @@ noise-barrier-calc/
 ├── CONTRIBUTING.md           Contributor guidelines
 ├── CHANGELOG.md              Version history
 ├── .gitignore
-├── index.html                Single-file app (v0.6)
+├── index.html                Single-file app (v0.7)
 ├── scripts/
-│   └── fetch-vendor.sh       Downloads vendored libraries to vendor/
-├── vendor/
-│   └── README.md             Explains what's vendored
+│   └── fetch-vendor.sh       (legacy) downloads libraries to vendor/
+├── vendor/                   (legacy) vendored libraries — v0.7 uses CDN
 ├── examples/
 │   └── README.md             Coming: GeoJSON scenarios
 └── docs/
     ├── physics.md            Detailed physics derivation
     └── design-guide.md       UI and code conventions
 ```
+
+> Note: from v0.7 the single-file app loads libraries from CDN, so the
+> `vendor/` folder and `scripts/fetch-vendor.sh` are no longer required to
+> run `index.html`; they are kept for offline/air-gapped reference.
 
 ---
 
@@ -232,12 +236,13 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and PRs welcome.
 
 ## License
 
-[Apache License 2.0](LICENSE).
+[Apache License 2.0](LICENSE). See also [NOTICE](NOTICE).
 
-## Maintained by
+## Author
 
-[Stefano Fante](https://github.com/stefanofante) — part of the [Open Lab](https://stline.it/open-lab/) activities of [ST-LINE S.r.l.](https://stline.it) (Treviso, Italy).
+[Stefano Fante](https://github.com/stefanofante) — [ST-LINE S.r.l.](https://stline.it)
+(Treviso, Italy), part of the [Open Lab](https://stline.it/open-lab/) activities.
 
 For commercial-grade acoustic mapping with multi-source, real terrain (DTM 5m),
 regional DBT data, CNOSSOS-EU/NMPB-Routes-2008, certified validation, and
-peritial-grade reports, see **Acustica Pro v2.x** (in development).
+peritial-grade reports, see **Acustica Pro** (in development).
