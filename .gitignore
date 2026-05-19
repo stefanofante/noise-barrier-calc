@@ -1,43 +1,24 @@
-# Dependencies
+# Vendored libraries (download via scripts/fetch-vendor.sh)
+vendor/*.js
+vendor/*.css
+vendor/*.min.js
+vendor/*.min.css
+!vendor/README.md
+
+# Local dev artifacts
+*.log
+.DS_Store
+Thumbs.db
 node_modules/
-.pnp
-.pnp.js
-
-# Build output
-dist/
-build/
-
-# Editor
 .vscode/
 .idea/
 *.swp
-*.swo
+*~
 
-# OS
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Local env
+# OS / editor temp
 .env
 .env.local
-.env.*.local
 
-# Test coverage
-coverage/
-.nyc_output/
-
-# Misc
-*.log
-
-# Vendored libraries — fetched via scripts/fetch-vendor.sh, not committed
-vendor/leaflet/leaflet.css
-vendor/leaflet/leaflet.js
-vendor/leaflet/images/
-vendor/papaparse.min.js
-vendor/d3-contour.min.js
+# Build outputs (currently no build step)
+dist/
+build/

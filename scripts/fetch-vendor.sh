@@ -1,39 +1,45 @@
 #!/usr/bin/env bash
-# Download vendored libraries to vendor/
-# Required versions are pinned to ensure reproducibility.
-# Mirrors the acmap fetch-vendor.sh — same versions, same approach.
+#
+# fetch-vendor.sh
+# Downloads vendored libraries used by index.html into the vendor/ directory.
+#
+# Run from the repository root:
+#   bash scripts/fetch-vendor.sh
+#
+# Required tool: curl (or wget — adjust commands)
+# Network access required.
+#
+# License of vendored libraries:
+#   - Leaflet 1.9.4 — BSD 2-Clause
+#   - d3-contour 4.0.2 — ISC
+#
+# See vendor/README.md for license details and update procedure.
 
 set -e
 
-cd "$(dirname "$0")/.."
+VENDOR_DIR="$(dirname "$0")/../vendor"
+mkdir -p "$VENDOR_DIR/leaflet" "$VENDOR_DIR/d3-contour"
 
-LEAFLET_VERSION="1.9.4"
-PAPAPARSE_VERSION="5.4.1"
-D3_CONTOUR_VERSION="4.0.2"
+echo "Downloading Leaflet 1.9.4..."
+curl -fSL -o "$VENDOR_DIR/leaflet/leaflet.css" \
+  "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+curl -fSL -o "$VENDOR_DIR/leaflet/leaflet.js" \
+  "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
 
-echo "Downloading Leaflet ${LEAFLET_VERSION}..."
-mkdir -p vendor/leaflet
-curl -fsSL -o vendor/leaflet/leaflet.css \
-  "https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet.css"
-curl -fsSL -o vendor/leaflet/leaflet.js \
-  "https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet.js"
-
-mkdir -p vendor/leaflet/images
+# Leaflet shipping images for markers / controls
+mkdir -p "$VENDOR_DIR/leaflet/images"
 for img in marker-icon.png marker-icon-2x.png marker-shadow.png \
            layers.png layers-2x.png; do
-  curl -fsSL -o "vendor/leaflet/images/${img}" \
-    "https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/images/${img}"
+  curl -fSL -o "$VENDOR_DIR/leaflet/images/$img" \
+    "https://unpkg.com/leaflet@1.9.4/dist/images/$img"
 done
 
-echo "Downloading PapaParse ${PAPAPARSE_VERSION}..."
-curl -fsSL -o vendor/papaparse.min.js \
-  "https://unpkg.com/papaparse@${PAPAPARSE_VERSION}/papaparse.min.js"
+echo "Downloading d3-contour 4.0.2..."
+curl -fSL -o "$VENDOR_DIR/d3-contour/d3-contour.min.js" \
+  "https://unpkg.com/d3-contour@4.0.2/dist/d3-contour.min.js"
 
-echo "Downloading d3-contour ${D3_CONTOUR_VERSION}..."
-curl -fsSL -o vendor/d3-contour.min.js \
-  "https://unpkg.com/d3-contour@${D3_CONTOUR_VERSION}/dist/d3-contour.min.js"
-
-echo ""
-echo "Done. All libraries are in vendor/."
-echo "Total size:"
-du -sh vendor/
+echo
+echo "Vendor libraries fetched into $VENDOR_DIR"
+echo "Now serve the repo over HTTP and open index.html:"
+echo "  python3 -m http.server 8000"
+echo "  open http://localhost:8000/"

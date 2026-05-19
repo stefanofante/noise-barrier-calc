@@ -1,33 +1,37 @@
-# Vendored libraries
+# vendor/
 
-This folder will host third-party libraries used by `index.html`
-once the tool is implemented:
-
-```
-vendor/
-├── leaflet/
-│   ├── leaflet.css      # Leaflet 1.9.4
-│   ├── leaflet.js
-│   └── images/
-├── papaparse.min.js     # PapaParse 5.4.1
-└── d3-contour.min.js    # d3-contour 4.0.2
-```
-
-Note: this tool does **not** use `leaflet.heat` (heatmaps are not
-relevant for a barrier-design workflow). Otherwise the dependency
-set matches [`acmap`](https://github.com/stefanofante/acmap).
-
-## Why vendored?
-
-Same rationale as `acmap`: offline use, reproducibility, privacy.
-
-## How to fetch them
+This directory is **gitignored** for the actual library files. Run the
+script to populate it locally before serving the app:
 
 ```bash
-./scripts/fetch-vendor.sh
+bash scripts/fetch-vendor.sh
 ```
 
-## Licenses
+## What gets downloaded
 
-All vendored libraries use permissive licenses (BSD-2-Clause, MIT,
-ISC). See [`NOTICE`](../NOTICE) for attribution details.
+| Library | Version | Files | License |
+|---------|---------|-------|---------|
+| [Leaflet](https://leafletjs.com) | 1.9.4 | `leaflet/leaflet.css`, `leaflet/leaflet.js`, `leaflet/images/*` | BSD 2-Clause |
+| [d3-contour](https://github.com/d3/d3-contour) | 4.0.2 | `d3-contour/d3-contour.min.js` | ISC |
+
+## Why vendored, not CDN?
+
+- **Reproducibility**: same code always loads, no surprise upstream changes
+- **Privacy**: no requests to third-party CDNs that could fingerprint users
+- **Offline**: works without internet after initial fetch (except for OSM tiles)
+- **License compliance**: clear local copy of LICENSE for each library
+
+## Updating versions
+
+To update to a newer library version, edit `scripts/fetch-vendor.sh`,
+re-run it, test, and commit `scripts/fetch-vendor.sh` (not the vendored files).
+
+Track upstream releases:
+- Leaflet: https://github.com/Leaflet/Leaflet/releases
+- d3-contour: https://github.com/d3/d3-contour/releases
+
+## License files
+
+Local copies of each library's license can be retrieved from the upstream
+repositories. Apache-2.0 of this project does **not** override upstream
+licenses for vendored code — each library remains under its own license.

@@ -1,73 +1,34 @@
-# Example scenarios
+# examples/
 
-> ⚠️ **Pre-development**: this folder will host example barrier-design
-> scenarios as JSON files. The format below is the **planned** schema;
-> the tool that consumes it is not yet implemented.
+Example scenarios for noise-barrier-calc.
 
-## Planned scenario format
+## Planned (not yet populated)
 
-Each scenario is a JSON file describing source, barrier, receivers,
-and atmospheric conditions:
+### `urban-road-barrier.geojson`
+Linear source representing an urban road (Lw' = 70 dB/m, urban_road spectrum)
+with a 3-meter acoustic barrier parallel to it at 5-meter offset.
+Receiver grid 300m × 300m at hr = 4m. Treviso location.
 
-```json
-{
-  "name": "Highway noise barrier — A27 sample",
-  "description": "Generic highway scenario near Treviso: 4-lane road, residential receivers 50m back",
-  "source": {
-    "lat": 45.66,
-    "lon": 12.24,
-    "lw_dba": 110,
-    "height_m": 0.5,
-    "spectrum": "traffic"
-  },
-  "barrier": {
-    "vertices": [
-      [45.6602, 12.2398],
-      [45.6602, 12.2402]
-    ],
-    "height_m": 3.0
-  },
-  "receivers": {
-    "type": "grid",
-    "center": [45.6605, 12.2400],
-    "extent_m": 200,
-    "step_m": 10,
-    "height_m": 4.0
-  },
-  "atmosphere": {
-    "temperature_c": 15,
-    "humidity_pct": 70,
-    "pressure_kpa": 101.325
-  },
-  "ground": {
-    "g_factor": 0.5
-  }
-}
+### `industrial-area-barrier.geojson`
+Areal source representing a small industrial zone (Lw'' = 55 dB/m², industrial spectrum)
+with an L-shaped barrier h = 4m on two sides. Tests cross-corner diffraction.
+
+### `point-source-machinery.geojson`
+Single point source (Lw = 105 dB, low-frequency dominant) representing an
+industrial fan or compressor, with a small barrier shielding a residential
+window 30m away.
+
+## How to use (future)
+
+```bash
+# Once examples are available, load via URL parameter:
+# https://stline.it/tools/calcolo-barriere/?scenario=urban-road-barrier
 ```
 
-## Planned example scenarios
+For now, replicate the scenarios manually following parameter values in the
+filenames above.
 
-Will be added once the tool is implemented:
+## Contributing examples
 
-- `highway-scenario.json` — Generic 4-lane motorway with single
-  barrier
-- `industrial-yard.json` — Industrial source with barrier along
-  property line
-- `railway-cut.json` — Railway in cutting with barrier on top edge
-- `urban-courtyard.json` — Inner courtyard receivers shielded from
-  street traffic by perimeter buildings (edge case: building +
-  barrier combination)
-
-## Where to get real data
-
-For real barrier design, you would typically have:
-
-- A road traffic model providing $L_W$ per source segment (from
-  vehicle count, speed, road surface)
-- CAD survey of the proposed barrier geometry
-- Receivers from building facades to assess legal compliance
-  (DPCM 14/11/1997 for Italy, or equivalent national directive)
-
-This tool is **not** intended for that workflow. For real barrier
-design, use software with proper source-line modeling and certified
-output (CadnaA, SoundPLAN, NoiseModelling).
+Real-world scenarios from your acoustic engineering work are welcome.
+Anonymize coordinates if needed, document the assumptions, and submit a PR.

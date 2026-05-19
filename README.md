@@ -1,203 +1,243 @@
 # noise-barrier-calc
 
-> Browser-based noise-barrier attenuation calculator — design a
-> sound barrier on a map, compute its insertion loss (the dB
-> reduction it produces) with ISO 9613-2 Maekawa diffraction over
-> the barrier crest.
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Status: v0.6](https://img.shields.io/badge/status-v0.6_working-green.svg)](#status)
+[![Standards: ISO 9613-2](https://img.shields.io/badge/standards-ISO_9613--2_%C2%A77.4-orange.svg)](#physics)
 
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Status](https://img.shields.io/badge/status-planned-orange)]()
-[![ISO 9613-2](https://img.shields.io/badge/Method-ISO%209613--2-informational)](https://www.iso.org/standard/20649.html)
+> **Browser-based acoustic barrier insertion-loss calculator.**
+> Place a source (point, line or area), draw a barrier on the map, and the tool
+> computes how much noise the barrier blocks at every point of a receiver grid.
 
-A companion tool to [`acmap`](https://github.com/stefanofante/acmap):
-same single-file philosophy, same physics engine, but focused on a
-specific use case — **does my barrier really cut the noise I want it
-to cut?**
-
-> ⚠️ **Status: planned, not yet implemented.** This repository hosts
-> the project structure, license, documentation, and roadmap. The
-> tool itself (`index.html`) is a placeholder. Active development
-> will start as Sprint B.4 of ST-LINE's Open Lab roadmap, after the
-> companion `acmap` tool is integrated into the ST-LINE website
-> ([stline.it/open-lab](https://stline.it/open-lab)).
+Demonstration tool for **environmental acoustics**, runs entirely in the browser.
+Companion to [acmap](https://github.com/stefanofante/acmap) (acoustic mapping), sharing the same physics engine.
 
 ---
 
-## Why a separate tool
+## What it does
 
-Couldn't this be a "barrier mode" inside `acmap`? Yes, technically.
-But practically:
-
-- **The use case is specific and frequent.** A "Tecnico Competente
-  in Acustica" (TCA) facing a barrier project doesn't need full
-  mapping — they need quick: "if I put a 3m barrier here, do I get
-  below the limit?"
-- **The UX is cleaner standalone.** Source fixed + barrier polyline
-  + receiver point or grid + insertion loss number. No mode
-  switching, no dataset upload.
-- **The physics engine is shared anyway.** Building diffraction in
-  `acmap` and barrier diffraction here use the same ISO 9613-2 §7.4
-  Maekawa formula. The geometry differs (polygon vs polyline), the
-  acoustic math doesn't.
-
-When the physics module is extracted from `acmap` into a separate
-shared package (planned), both tools will depend on it.
-
----
-
-## What it will do
-
-### Planned workflow
-
-1. **Open the tool**, see a Leaflet map (default Treviso)
-2. **Place a source**: click on the map, set $L_W$, height, spectrum
-3. **Draw a barrier**: click multiple points to define a polyline,
-   set its uniform height
-4. **Define receiver(s)**: either a single point (click) or a grid
-5. **See immediately**:
-   - Sound level at each receiver **with the barrier**
-   - Sound level at each receiver **without the barrier** (greyed)
-   - **Insertion loss** = difference (the design metric)
-6. **Adjust** any parameter — recompute is automatic
-7. **Export** results: CSV of receivers, GeoJSON of geometry,
-   PNG of map
-
-### Planned outputs
-
-- **Per-receiver insertion loss**: how many dB the barrier removes
-- **Aggregated stats**: mean IL, max IL, % receivers below a chosen
-  legal limit
+- **Three source types** selectable on the map:
+  - **Linear** (road, railway): polyline with `Lw'` in dB per meter
+  - **Areal** (industrial zone, parking lot): rectangle with `Lw''` in dB per m²
+  - **Point** (single machinery, fan, exhaust): single click with total `Lw` in dB
+- **Acoustic barrier** as polyline with adjustable height
+- **Receiver grid** configurable extent and step
+- **Two diffraction methods** selectable:
+  - **ISO 9613-2:1996 §7.4** (default, conservative, with K<sub>met</sub> meteorological correction)
+  - **Maekawa (1968)** (original formula, max 25 dB)
 - **Visualization**:
-  - Map with receivers colored by IL or by absolute level
-  - Cross-section diagram (source / barrier / receivers in 2D
-    vertical plane)
-  - Effectiveness assessment ("the barrier works well here, fails
-    there")
+  - Filled contour bands at 5 dB intervals (default)
+  - Isolines at 5 dB
+  - Individual receiver points (optional)
+  - Continuous color legend with all 5 dB tick marks
+  - Metric grid overlay (5–25m, zoom-adaptive)
+- **Vertical cross-section**: click any receiver to see source→barrier→receiver
+  path geometry with diffraction details
+- **CSV export** of receiver grid with coordinates and dB values
+- **Spinner with progress %** during background calculation
+- **Responsive UI** — calculation chunked, map stays interactive
 
-### Planned source spectra
+## What it does NOT do
 
-Same five as `acmap`: flat, road traffic, rail, industrial, low-freq.
+This is a **demonstration tool**. It does not replace certified software
+(CadnaA, SoundPLAN, NoiseModelling) for legal/peritial barrier design.
+Specifically not modeled:
 
-### Planned limitations (declared upfront)
+- Multi-barrier in cascade (C<sub>3</sub> fixed to 1 in ISO 9613-2)
+- Lateral diffraction around barrier edges
+- Sound transmission through the barrier (assumed opaque)
+- Reflections from source side or between barriers
+- NMPB-Routes-2008 for road sources (traffic flow modeling)
+- NMPB-Fer for railway sources
+- CNOSSOS-EU complete framework
+- Profiled meteorology (vertical wind/temperature gradients)
+- Real spectra from measurements (provides stylized presets only)
 
-This will be a **demonstrative tool**, NOT a barrier-design
-software. Limitations will include:
-
-- Single-source, single-barrier setups only
-- Uniform barrier height along the polyline (no stepped barriers)
-- Maekawa single-screen diffraction only (no multi-edge, no
-  earth-berm sound paths)
-- No reflection contributions from the barrier's source side
-- No barrier transmission loss (we assume barrier is acoustically
-  opaque — typical for masonry; not true for hedges or thin
-  partitions)
-- No frequency-dependent absorption of the barrier surface
-- No ground effect interaction with the barrier base (real barriers
-  have a small contribution from this)
-
-For real barrier design, see software like CadnaA, SoundPLAN, or
-NoiseModelling.
-
----
-
-## Physics (preview)
-
-Same as [`acmap`'s physics doc](https://github.com/stefanofante/acmap/blob/main/docs/physics.md),
-except:
-
-- The diffracting object is a **line segment with height** (polyline
-  with constant height), not a polygon
-- The geometric test is **segment-segment intersection** (S→R line
-  crossing the barrier polyline) instead of segment-polygon
-- The path-delta calculation $\delta$ is the same: $(d_{ST} + d_{TR})
-  - d_{SR}$, where $T$ is the top of the barrier at the intersection
-  point
-
-The Maekawa formula:
-
-$$A_{dif}(f) = 10 \log_{10}(3 + 20 N)$$
-
-with $N = 2\delta/\lambda$ — identical to `acmap`.
+For certified barrier design, consult a registered acoustic engineer or use
+omologated software.
 
 ---
 
-## Architecture (planned)
+## Status
+
+**v0.6 working** — functional prototype, browser-based.
+
+| Version | Status | Highlights |
+|---------|--------|------------|
+| v0.1    | done   | Point/line/area sources, single Maekawa diffraction, receiver grid + insertion loss |
+| v0.2    | done   | Source visibility fixes, point source mode, reset button, cursor readout |
+| v0.3    | done   | Vertical cross-section diagram, CSV export of receiver grid |
+| v0.4    | done   | ISO 9613-2 §7.4 complete formula (C2, C3 placeholder, K<sub>met</sub>) + method toggle |
+| v0.5    | done   | Metric grid overlay (5m visual reference), responsive chunked calc, progress spinner |
+| v0.6    | done   | Filled contour bands at 5 dB, continuous color legend with tick marks |
+| v0.7+   | planned | Multi-barrier cascade, lateral diffraction, source spectra from CSV |
+
+## How to use
+
+### Online (when integrated)
+
+Will be available at `stline.it/tools/calcolo-barriere/` (see [stline.it/tools/](https://stline.it/tools/)).
+
+### Local
+
+1. Clone the repo:
+   ```bash
+   git clone https://github.com/stefanofante/noise-barrier-calc.git
+   cd noise-barrier-calc
+   ```
+
+2. Fetch vendored libraries (Leaflet, d3-contour):
+   ```bash
+   bash scripts/fetch-vendor.sh
+   ```
+
+3. Serve over HTTP (NOT `file://` — Leaflet tiles won't load):
+   ```bash
+   # Linux/macOS
+   python3 -m http.server 8000
+
+   # Windows PowerShell
+   cd $env:USERPROFILE\<repo-path>
+   python -m http.server 8000
+   ```
+
+4. Open `http://localhost:8000/` in your browser.
+
+### Quick workflow
+
+1. Select source type (linear / areal / point)
+2. Choose spectrum preset and set `Lw'`, `Lw''`, or `Lw`
+3. Click "Draw on map" and place the source
+4. Set barrier height + base elevation
+5. Click "Draw on map" for the barrier and place it
+6. Select diffraction method (ISO 9613-2 default)
+7. Adjust receiver grid, atmosphere, DPCM class as needed
+8. Click "Calculate" — watch the progress spinner
+9. Inspect the heatmap with filled bands and isolines
+10. Click "Vertical cross-section" → click any receiver for geometry
+11. Click "Export CSV" to download the receiver grid
+
+---
+
+## Physics
+
+The tool implements the standard outdoor sound propagation model.
+
+For each source point → receiver pair:
+
+| Term | Standard | Description |
+|------|----------|-------------|
+| `A_div = 20·log10(d) + 11` | (geometric) | Spherical spreading from point source |
+| `A_atm` | ISO 9613-1:1993 | Atmospheric absorption per 1/3 octave band (63 Hz – 8 kHz) |
+| `A_gr` | ISO 9613-2:1996 §7.3.2 | Ground effect with G-factor (0=hard, 1=porous) |
+| `A_dif` | ISO 9613-2:1996 §7.4 OR Maekawa 1968 | Barrier diffraction (selectable) |
+
+### Source discretization
+
+| Source type | Discretization | Per-point Lw |
+|-------------|----------------|--------------|
+| Linear      | 5m along polyline | `Lw = Lw' + 10·log10(5)` |
+| Areal       | 10m × 10m grid | `Lw = Lw'' + 10·log10(100)` |
+| Point       | 1 point | `Lw = Lw_total` |
+
+### Diffraction formulas (selectable)
+
+**Maekawa (1968)** — original formula, infinite barrier assumed:
+```
+A_dif = 10·log10(3 + 20·N)
+N = 2·δ/λ                 (Fresnel number)
+δ = (d_st + d_tr) - d_sr  (path difference, meters)
+```
+Max attenuation: 25 dB.
+
+**ISO 9613-2:1996 §7.4** — full screening formula (default):
+```
+Dz = 10·log10(3 + (C2/λ)·C3·z·Kmet)
+
+C2 = 20                     (no separate ground reflections)
+C3 = 1                      (single barrier; ≠1 for double — not implemented)
+z = δ                       (path difference)
+Kmet = exp(-(1/2000)·√(d_ss·d_sr/(2z)))   (downwind meteorological correction)
+```
+Max attenuation: 20 dB (single barrier), 25 dB (double, when C3 implemented).
+
+The two formulas converge when ISO 9613-2 uses C2=40, K<sub>met</sub>=1, but the
+standard formula (C2=20) is consistently 1-3 dB more conservative than Maekawa
+in the mid-frequency range, and includes meteorological correction reducing
+effectiveness over long distances (>500m downwind).
+
+### Total receiver level
+
+All per-band sound pressures are A-weighted and summed energetically across
+the spectrum. Then contributions from all source points are summed energetically
+at the receiver:
+
+```
+Leq_A = 10·log10(Σ_points Σ_bands 10^((Lp_band + A_weight)/10))
+```
+
+**Insertion Loss** = Leq_without_barrier − Leq_with_barrier.
+
+---
+
+## References
+
+- **ISO 9613-1:1993** — Acoustics — Attenuation of sound during propagation outdoors. Part 1: Calculation of the absorption of sound by the atmosphere
+- **ISO 9613-2:1996** — Acoustics — Attenuation of sound during propagation outdoors. Part 2: General method of calculation
+- Maekawa, Z. (1968). *Noise reduction by screens*. Applied Acoustics, 1(3), 157–173
+- **DPCM 14/11/1997** — Determinazione dei valori limite delle sorgenti sonore (Italian acoustic zoning)
+
+---
+
+## Tech stack
+
+- **Vanilla JavaScript** (no bundler, no build pipeline)
+- **Single-file HTML** (`index.html`) — ~2400 lines, ~90KB
+- **Vendored libraries** (`vendor/`, fetched by script):
+  - [Leaflet 1.9.4](https://leafletjs.com) — BSD 2-Clause
+  - [d3-contour 4.0.2](https://github.com/d3/d3-contour) — ISC
+- **OpenStreetMap tiles** (ODbL)
+- **No backend, no analytics, no tracking** — fully client-side
+
+User data (source, barrier, receivers) never leaves the browser.
+
+---
+
+## Repository structure
 
 ```
 noise-barrier-calc/
-├── index.html              # The tool, single file (TBD)
-├── vendor/                 # Same vendored libraries as acmap
-│   ├── leaflet/
-│   ├── papaparse.min.js
-│   └── d3-contour.min.js
-├── examples/
-│   └── highway-scenario.json
-├── docs/
-│   ├── physics.md
-│   ├── design-guide.md     # acoustic engineer perspective
-│   └── screenshots/
+├── LICENSE                   Apache-2.0
+├── NOTICE                    Attribution + third-party
+├── README.md                 This file
+├── CONTRIBUTING.md           Contributor guidelines
+├── CHANGELOG.md              Version history
+├── .gitignore
+├── index.html                Single-file app (v0.6)
 ├── scripts/
-│   └── fetch-vendor.sh     # Same as acmap
-├── LICENSE                 # Apache-2.0
-├── NOTICE                  # Third-party attributions
-├── CHANGELOG.md
-├── CONTRIBUTING.md
-└── README.md
+│   └── fetch-vendor.sh       Downloads vendored libraries to vendor/
+├── vendor/
+│   └── README.md             Explains what's vendored
+├── examples/
+│   └── README.md             Coming: GeoJSON scenarios
+└── docs/
+    ├── physics.md            Detailed physics derivation
+    └── design-guide.md       UI and code conventions
 ```
 
 ---
 
-## Roadmap
+## Contributing
 
-| Version | Status | Features |
-|---|---|---|
-| v0.1 | **planned** | First working version: source + barrier + single receiver |
-| v0.2 | planned | Receiver grid + insertion loss visualization |
-| v0.3 | planned | Cross-section diagram + result export |
-| v0.4 | planned | Shared physics module with `acmap` |
-
-Expected ETA: tied to the ST-LINE Open Lab roadmap. The companion
-`acmap` integration comes first; `noise-barrier-calc` follows.
-
----
-
-## Why publish the empty repo now?
-
-To establish the project under proper open-source licensing from
-the start, and to allow the companion `acmap` to link to it as a
-"sister tool" before it's actually built. Subscribers and watchers
-can follow development from day zero.
-
-If you want to **be notified when the first working version ships**,
-click the "Watch" button on this repo.
-
----
-
-## Author and affiliation
-
-Maintained by [Stefano Fante](https://github.com/stefanofante),
-founder of [ST-LINE S.r.l.](https://stline.it) (Treviso, Italy).
-ST-LINE is an electronic-design firm with a complementary practice
-in environmental acoustics; this tool is part of its
-[Open Lab](https://stline.it/open-lab) initiative.
-
-This tool, like its companion `acmap`, is part of the development
-road toward [Acustica Pro](https://stline.it/prodotti/acustica-pro),
-ST-LINE's upcoming professional software for environmental
-acoustics analysis.
-
----
-
-## See also
-
-- [`acmap`](https://github.com/stefanofante/acmap) — companion
-  mapping tool, with the same physics engine
-- [stline.it/open-lab](https://stline.it/open-lab) — ST-LINE Open
-  Lab full index
-
----
+See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and PRs welcome.
 
 ## License
 
-Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE)
-for details, [NOTICE](NOTICE) for third-party attributions.
+[Apache License 2.0](LICENSE).
+
+## Maintained by
+
+[Stefano Fante](https://github.com/stefanofante) — part of the [Open Lab](https://stline.it/open-lab/) activities of [ST-LINE S.r.l.](https://stline.it) (Treviso, Italy).
+
+For commercial-grade acoustic mapping with multi-source, real terrain (DTM 5m),
+regional DBT data, CNOSSOS-EU/NMPB-Routes-2008, certified validation, and
+peritial-grade reports, see **Acustica Pro v2.x** (in development).

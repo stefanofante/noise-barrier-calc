@@ -1,147 +1,245 @@
-# Acoustic physics in noise-barrier-calc
+# Physics — noise-barrier-calc
 
-> ⚠️ **Pre-development**: this document describes the **planned**
-> physics implementation. The actual code is not yet in place.
+Detailed derivation and validation notes for the acoustic propagation
+calculations implemented in `index.html`.
 
-This document derives the formulas that **will be** implemented
-for noise barrier attenuation calculation. The implementation will
-follow ISO 9613-2:1996 §7.4 (Maekawa diffraction) and shares its
-foundation with [`acmap`](https://github.com/stefanofante/acmap)
-(see [acmap's physics doc](https://github.com/stefanofante/acmap/blob/main/docs/physics.md)
-for the complete derivation).
+## Overview
 
-This page focuses on what's **specific** to the barrier case.
+For each pair (source point, receiver point), the tool computes the
+A-weighted equivalent sound pressure level `Leq_A` according to the
+outdoor sound propagation model of **ISO 9613-2:1996**:
 
----
+```
+Leq(r) = Lw + D_C - A_div - A_atm - A_gr - A_dif - A_misc
+```
 
-## Barrier as a diffraction screen
+where `Lw` is the source sound power level (per 1/3 octave band),
+`D_C` is the directivity correction (set to 0 for omnidirectional point
+sources, the only type modeled here), and the `A_*` terms are attenuations.
 
-A noise barrier is treated as a **vertical screen of uniform height**
-along a polyline. Geometrically it's identical to an infinitely thin
-wall.
+## Term-by-term
 
-Given:
-- Source at $(x_s, y_s)$ in 2D plan with height $h_s$
-- Barrier polyline as ordered vertices $(x_1, y_1), (x_2, y_2), ...$
-  with single height $h_b$
-- Receiver at $(x_r, y_r)$ with height $h_r$
+### A_div — Geometric divergence
 
-For each receiver, the question is: **does the segment
-$\overline{SR}$ in 2D plan view cross any segment of the barrier
-polyline?**
+For an omnidirectional point source in free field:
 
-If it doesn't: no diffraction, the receiver is in line of sight,
-$A_{dif} = 0$.
+```
+A_div = 20·log10(d / 1m) + 11    [dB]
+```
 
-If it does: find the intersection point $(x_c, y_c)$. This is
-where the source-to-receiver path crosses the barrier in plan view.
-Now we drop into the vertical plane along the $SR$ segment and
-compute the Maekawa diffraction as in `acmap`.
+The `+11` term corresponds to `10·log10(4π)` and converts from sound power
+to sound pressure at 1 meter. Hemispherical sources (source on hard ground)
+would use `+8` instead; we conservatively use `+11` here.
 
----
+For distances `d < 1m`, the formula is clamped to `d = 1m` to avoid
+unphysical negative values.
 
-## Vertical geometry
+### A_atm — Atmospheric absorption (ISO 9613-1:1993)
 
-Once we have the crossing point, the 2D vertical plane analysis is
-identical to acmap's:
+Frequency-dependent absorption coefficient `α(f)` in dB/m computed per 1/3
+octave band (63 Hz – 8 kHz) with the ISO 9613-1 formula. Inputs:
 
-- Source $S$ at horizontal distance 0 (along the SR direction),
-  vertical height $h_s$
-- Barrier top $T$ at horizontal distance $d_{sb}$ (= distance from
-  source to crossing point), height $h_b$
-- Receiver $R$ at horizontal distance $d_{sb} + d_{br}$ (where
-  $d_{br}$ = crossing point to receiver), height $h_r$
+- Temperature `T` in °C (default 15)
+- Relative humidity `RH` in % (default 70)
+- Atmospheric pressure `pa` (assumed 101.325 kPa, sea level)
 
-The path difference:
+```js
+function atmAttenuation(f, T_c, RH, p_kPa=101.325) {
+  const T = T_c + 273.15, T0 = 293.15;
+  const pa_pr = p_kPa / 101.325;
+  const psat_pr = pa_pr * Math.pow(10, -6.8346 * Math.pow(273.16/T, 1.261) + 4.6151);
+  const h = RH * psat_pr / pa_pr;
+  const frO = pa_pr * (24 + 4.04e4 * h * (0.02+h) / (0.391+h));
+  const frN = pa_pr * Math.pow(T/T0,-0.5) * (9 + 280*h*Math.exp(-4.170*(Math.pow(T/T0,-1/3)-1)));
+  return 8.686 * f * f * (
+    1.84e-11 * (1/pa_pr) * Math.sqrt(T/T0) +
+    Math.pow(T/T0,-2.5) * (
+      0.01275 * Math.exp(-2239.1/T) / (frO + f*f/frO) +
+      0.1068 * Math.exp(-3352.0/T) / (frN + f*f/frN)
+    )
+  );
+}
+```
 
-$$\delta = \sqrt{d_{sb}^2 + (h_b - h_s)^2} + \sqrt{d_{br}^2 + (h_r - h_b)^2} - \sqrt{(d_{sb}+d_{br})^2 + (h_r - h_s)^2}$$
+Total atmospheric attenuation: `A_atm = α(f) · d`.
 
-(Only computed if $h_b$ is above the line-of-sight at the crossing
-point. Otherwise $\delta = 0$.)
+### A_gr — Ground effect (ISO 9613-2 §7.3.2)
 
-Then Maekawa per band:
+General method, single broadband correction (not per-band §7.3.1):
 
-$$A_{dif}(f) = 10 \log_{10}\left(3 + \frac{40 \delta f}{c}\right)$$
+```
+A_gr = max(G · A_gr,soft + (1-G) · A_gr,hard, -3 dB)
 
-with $c = 343$ m/s.
+A_gr,soft = 4.8 - (2·hm/d) · (17 + 300/d)
+A_gr,hard = -3.0
+hm = (hs + hr) / 2
+```
 
----
+where:
+- `hs` = source height above ground
+- `hr` = receiver height above ground
+- `hm` = mean height
+- `d` = horizontal distance
+- `G` = ground factor (0 = acoustically hard like asphalt, 1 = porous like grass)
 
-## Multiple barrier segments
+### A_dif — Barrier diffraction (selectable: Maekawa OR ISO 9613-2 §7.4)
 
-A polyline barrier is a sequence of straight segments. The $SR$
-line might cross **multiple segments** of the same barrier (if the
-barrier wraps around or zigzags).
+Both formulas use the **path difference** `δ`:
 
-For now, the plan is to handle this conservatively: **take the
-crossing point closest to the source-receiver midpoint**, treating
-the rest as if not present. This may underestimate attenuation for
-complex shapes but is consistent with the single-Maekawa philosophy
-of the tool.
+```
+δ = (d_st + d_tr) - d_sr_direct
+```
 
-Future versions may implement a more rigorous multi-edge
-combination, but this would require the §7.4.2 combination rule
-and careful geometric reasoning.
+where:
+- `d_st` = source → top-of-barrier distance
+- `d_tr` = top-of-barrier → receiver distance
+- `d_sr_direct` = direct source → receiver distance (line of sight)
 
----
+If `δ ≤ 0` (no line-of-sight blocking), `A_dif = 0`.
 
-## Insertion loss
+#### Maekawa (1968)
 
-The **insertion loss** is the design metric for barriers:
+Original formula based on Fresnel number `N = 2δ/λ`:
 
-$$IL = L_{eq,A,\text{no barrier}} - L_{eq,A,\text{with barrier}}$$
+```
+A_dif = 10·log10(3 + 20·N) = 10·log10(3 + 40·δ/λ)
+```
 
-It directly answers "**how much quieter** does the barrier make this
-receiver?".
+Max attenuation clamped at **25 dB**. Assumes barrier infinitely long
+(no lateral diffraction around edges).
 
-The tool will display IL prominently — typically a number in
-dB(A) with a color-coded annotation (e.g., 0 dB = ineffective,
-10 dB = noticeable, 15 dB = very effective).
+#### ISO 9613-2:1996 §7.4 — Single screen
 
----
+Standard screening formula:
 
-## Limitations (planned)
+```
+Dz = 10·log10(3 + (C2/λ)·C3·z·Kmet)
+```
 
-- **Single barrier only**. Multiple barriers in cascade are not
-  modeled. Real road-noise reduction projects often use double
-  barriers (top of cut + earth berm + wall), and these can't be
-  computed here.
-- **No reflection contributions**. Sound reflecting off the
-  barrier's source side is ignored. For tall barriers near urban
-  facades, this can be 1-3 dB error.
-- **No transmission loss through the barrier**. The barrier is
-  assumed acoustically opaque. For real materials:
-  - Masonry, dense concrete: opaque (correct)
-  - Wood, light panels: 15-25 dB TL (we assume infinite — overstates IL)
-  - Hedges, vegetation: 5-10 dB TL (we badly overstate)
-- **Uniform barrier height** along the polyline. Real barriers
-  often have stepped heights or earth-berm combinations.
-- **No barrier-base ground effect**. The acoustic shadow at the
-  barrier base interacts with ground in subtle ways not modeled.
-- **Single source**. Real roads have hundreds of vehicles distributed
-  along the corridor; we approximate with a single equivalent point
-  source.
+with:
+- `C2 = 20` (when ground reflections modeled separately; use `C2 = 40` to
+  recover Maekawa-like behavior)
+- `C3 = 1` for single barrier (placeholder; non-trivial formula for double
+  barriers, not implemented)
+- `z = δ` (path difference)
+- `Kmet = exp(-(1/2000)·√(d_ss·d_sr/(2z)))` for downwind propagation
+  (reduces barrier effectiveness with distance)
+- `d_ss` = source-to-screen distance
+- `d_sr` = source-to-receiver distance
 
-For real barrier design, use **CadnaA, SoundPLAN, NoiseModelling**
-or a registered acoustic engineer.
+Max attenuation: **20 dB** for single barrier, **25 dB** for double.
 
----
+The ISO formula is consistently **1-3 dB more conservative** than Maekawa
+in the mid-frequency range (250 Hz – 4 kHz). The K_met factor becomes
+significant only at long distances (>500m with downwind propagation,
+K_met drops to ~0.85-0.95).
 
-## References
+## Source discretization
 
-Same as [acmap physics](https://github.com/stefanofante/acmap/blob/main/docs/physics.md):
+### Linear sources
 
-- ISO 9613-1:1993 (atmospheric absorption)
-- ISO 9613-2:1996 §7 (propagation + diffraction)
-- Maekawa Z. (1968), *Noise reduction by screens*, Applied
-  Acoustics 1(3), 157–173
+A polyline source (road, railway) is discretized into point sources spaced
+**every 5 meters** along the path. Each equivalent point source has:
 
-Specific to barriers:
+```
+Lw_point = Lw' + 10·log10(5)
+```
 
-- Kotzen B., English C. (2009), *Environmental Noise Barriers: A
-  Guide to Their Acoustic and Visual Design*, 2nd ed., Spon Press
-- Beranek L.L. (1988), *Noise and Vibration Control* (chapter on
-  barriers)
-- Watts G., Godfrey N. (1999), *Effects on roadside noise levels
-  of sound absorptive materials in noise barriers*, Applied
-  Acoustics 58(4)
+where `Lw'` is the input sound power per meter (dB/m).
+
+For a 200m road with `Lw' = 70 dB/m`:
+- 41 point sources
+- Each at `Lw_point = 70 + 7 = 77 dB`
+- Sum equals `Lw_total = Lw' + 10·log10(200) = 70 + 23 = 93 dB`
+
+### Areal sources
+
+A rectangular source (industrial zone, parking) is discretized into a
+**10m × 10m grid** of point sources. Each cell:
+
+```
+Lw_point = Lw'' + 10·log10(100) = Lw'' + 20
+```
+
+### Point sources
+
+Single click → single point source at the click location with the user-
+provided total `Lw`.
+
+## Total receiver level
+
+Energy summation across:
+
+1. **Spectrum** (per source-receiver pair): each 1/3 octave band level is
+   A-weighted, exponentiated, summed, log-converted.
+2. **All source points** (per receiver): all per-source A-weighted Leq values
+   are exponentiated, summed, log-converted.
+
+```
+Lp_band = Lw_band - A_div - A_atm - A_gr - A_dif
+energy_band = 10^((Lp_band + A_weight_band) / 10)
+energy_pair = Σ_bands energy_band
+Leq_pair = 10·log10(energy_pair)
+
+energy_receiver = Σ_pairs 10^(Leq_pair / 10)
+Leq_A_receiver = 10·log10(energy_receiver)
+```
+
+## Insertion Loss
+
+```
+IL = Leq_no_barrier - Leq_with_barrier   [dB]
+```
+
+Computed at every receiver of the grid by doing **two parallel calculations**:
+one with `A_dif = 0` for all source-receiver paths, one with the actual
+diffraction value where the source-receiver line intersects the barrier
+polyline.
+
+## Validation cases
+
+### Case 1: Urban road, single barrier
+
+- Source: 200m linear, Lw' = 70 dB/m, urban_road spectrum
+- Barrier: h = 3m, 10m offset from road
+- Receiver: 50m perpendicular distance
+- T = 15°C, RH = 70%, G = 0.5
+
+Expected `IL = 8-12 dB` (literature range for h=3m urban road barriers).
+Python validation: IL ≈ 6.8 dB (slightly under, consistent with barrier
+close to source rather than to receiver).
+
+### Case 2: Industrial area
+
+- Source: 50×30m rectangle, Lw'' = 55 dB/m², industrial spectrum
+- Barrier: h = 4m at 30m from area edge
+- Receiver: 60m from area center
+- T = 15°C, RH = 70%, G = 0.5
+
+Expected `IL ≈ 10-15 dB`.
+Python validation: IL ≈ 12.9 dB (within range).
+
+### Case 3: ISO vs Maekawa comparison
+
+Same scenario (δ = 0.5m, f = 1000 Hz, d_ss = 10m, d_sr = 200m):
+- Maekawa: 17.88 dB
+- ISO 9613-2 (C2=20, K_met active): 14.98 dB
+- ISO 9613-2 (C2=40, K_met = 1, equivalent Maekawa): 17.78 dB
+
+Difference of ~3 dB between Maekawa and ISO with C2=20 is expected and
+documented in [ISO 9613-2 commentary literature](https://standards.iso.org/iso/9613).
+
+## Limitations explicit in the code
+
+- Single Maekawa screen, no multi-barrier cascade
+- No lateral diffraction around barrier edges
+- No transmission through barrier (assumed opaque, like concrete or sound-rated panels)
+- No reflections from barrier or surroundings
+- No vertical wind/temperature gradient modeling
+- Stylized spectrum presets (not measured spectra from real sources)
+- No NMPB-Routes-2008 traffic flow model
+- No NMPB-Fer railway noise model
+- No CNOSSOS-EU framework
+
+For these features, see commercial software (CadnaA, SoundPLAN,
+NoiseModelling) or future Acustica Pro v2.x.
