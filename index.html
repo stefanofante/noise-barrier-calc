@@ -559,6 +559,161 @@ html[data-theme='dark'] .crosssection-svg .cs-barrier{ fill: #2a2d33; }
 @media (max-width: 700px){
   .cta-inner{ flex-direction: column; align-items: flex-start; }
 }
+
+/* ======================================================================
+ * v0.8 — Result notes + diffracted stats + manual receivers + compact panel
+ * ====================================================================== */
+
+/* Multi-column panel: il grid condiviso fa righe alte quanto la sezione
+   più alta → spazio sprecato sotto le sezioni corte. Multi-column
+   impacchetta verticalmente; .span-2 risultati torna full-width. */
+.tool-panel-grid.barrier-calc-grid {
+  display: block;
+  column-width: 232px;
+  column-gap: 18px;
+}
+.tool-panel-grid.barrier-calc-grid > .tool-panel-section {
+  break-inside: avoid;
+  margin: 0 0 16px;
+}
+.tool-panel-grid.barrier-calc-grid > .span-2 {
+  column-span: all;
+  margin-top: 2px;
+}
+
+/* Results: stats e tabella ricevitori manuali AFFIANCATE; la tabella va
+   sotto SOLO se la pagina è troppo stretta (breakpoint dedicato). */
+.bc-results-flex {
+  display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start;
+}
+.bc-stats-col { flex: 1 1 320px; min-width: 0; }
+.manual-receivers-table-wrap {
+  flex: 1 1 300px; min-width: 0;
+  padding: 16px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 6px;
+}
+@media (max-width: 860px) {
+  .bc-stats-col, .manual-receivers-table-wrap { flex-basis: 100%; }
+}
+
+.results-explainer {
+  padding: 14px 16px; margin: 10px 0 16px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  background: var(--surface); border-radius: 6px;
+}
+.results-explainer-title {
+  font-family: var(--f-mono); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--ink-2); margin: 0 0 8px;
+}
+.results-explainer-text {
+  font-size: 13px; line-height: 1.6; color: var(--ink-2); margin: 0;
+}
+.results-explainer-text strong { color: var(--ink); }
+.results-explainer-text em { color: var(--accent); font-style: normal; }
+
+.stat-sublabel {
+  font-family: var(--f-mono); font-size: 10.5px;
+  color: var(--muted); margin-top: 4px; line-height: 1.3;
+}
+
+.stat-row-diffracted {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; margin-top: 12px;
+}
+.stat-box-diff {
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+}
+@media (max-width: 700px) {
+  .stat-row-diffracted { grid-template-columns: 1fr; }
+}
+
+/* Sezione 9 — Ricevitori manuali */
+.panel-helper {
+  font-size: 12px; color: var(--muted);
+  margin: 0 0 10px; line-height: 1.4;
+}
+.pick-status {
+  font-family: var(--f-mono); font-size: 11.5px;
+  padding: 8px 10px; margin-top: 8px; border-radius: 4px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid var(--accent); color: var(--ink);
+}
+/* Lista chip compatte (NON una riga piena per ricevitore) */
+#manual-receivers-list {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;
+}
+#manual-receivers-list .manual-receiver-row {
+  display: flex; gap: 4px; align-items: center;
+}
+/* Larghezza giusto per R1..R5; si espande al focus per label personalizzate.
+   Selettore id-scoped → batte .tool-panel-section input (width:100%). */
+#manual-receivers-list .mr-label-input {
+  width: 42px; height: 24px; font-size: 12px; padding: 3px 5px;
+  background: var(--bg); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 4px;
+}
+#manual-receivers-list .mr-label-input:focus {
+  width: 150px; outline: none; border-color: var(--accent);
+}
+#manual-receivers-list .mr-delete-btn {
+  flex-shrink: 0; padding: 3px 6px; font-size: 12px; line-height: 1;
+  height: 24px; background: transparent; color: var(--ink-2);
+  border: 1px solid var(--line); border-radius: 4px; cursor: pointer;
+}
+#manual-receivers-list .mr-delete-btn:hover {
+  border-color: #d8302a; color: #d8302a;
+}
+
+/* Marker: pin QUADRATO con punta — volutamente NON circolare per non
+   confondersi col dot tondo della geolocalizzazione né coi marker
+   tondi della griglia. */
+.manual-receiver-marker .mr-pin {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  background: #00bcd4; color: #fff;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 700;
+  border: 2px solid #fff; border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.manual-receiver-marker .mr-pin::after {
+  content: ''; position: absolute; left: 50%; bottom: -9px;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 9px solid #fff;
+}
+
+.manual-table-title {
+  font-family: var(--f-mono); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--ink-2); margin: 0 0 12px;
+}
+.manual-receivers-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
+.manual-receivers-table th,
+.manual-receivers-table td {
+  text-align: left; padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.manual-receivers-table th {
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+}
+.manual-receivers-table tbody tr:last-child td { border-bottom: none; }
+.manual-receivers-table .diff-tag {
+  font-family: var(--f-mono); font-size: 10px;
+  padding: 2px 6px; margin-left: 4px; border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+.manual-receivers-table .status-ok { color: #28a745; font-weight: 600; }
+.manual-receivers-table .status-over { color: #d8302a; font-weight: 600; }
+.manual-receivers-table .status-none { color: var(--muted); }
 </style>
 </head>
 <body>
@@ -593,7 +748,7 @@ html[data-theme='dark'] .crosssection-svg .cs-barrier{ fill: #2a2d33; }
     <h1 class="bc-h1" id="bc-h1"></h1>
     <p class="hero-sub" data-i18n-text="heroSub"></p>
     <div class="hero-meta">
-      <span class="tag beta">PROTO · v0.7</span>
+      <span class="tag beta">PROTO · v0.8</span>
       <span class="tag">ISO 9613-2 §7.4</span>
       <span class="tag">Maekawa</span>
       <span class="tag">Insertion Loss</span>
@@ -630,7 +785,7 @@ html[data-theme='dark'] .crosssection-svg .cs-barrier{ fill: #2a2d33; }
       </div>
     </div>
     <div class="tool-panel">
-      <div class="tool-panel-grid">
+      <div class="tool-panel-grid barrier-calc-grid">
 
       <div class="tool-panel-section">
         <h3 class="panel-title" data-i18n-text="s1Title"></h3>
@@ -741,8 +896,8 @@ html[data-theme='dark'] .crosssection-svg .cs-barrier{ fill: #2a2d33; }
             <input type="number" id="rec-h" value="4" min="0.5" max="30" step="0.5">
           </div>
           <div>
-            <label class="panel-label" data-i18n-text="gridExtentLabel"></label>
-            <input type="number" id="grid-extent" value="300" min="50" max="800" step="50">
+            <label class="panel-label" data-i18n-text="gridBufferLabel"></label>
+            <input type="number" id="grid-buffer" value="150" min="25" max="500" step="25">
           </div>
         </div>
         <div class="input-row">
@@ -831,6 +986,15 @@ html[data-theme='dark'] .crosssection-svg .cs-barrier{ fill: #2a2d33; }
       </div>
 
       <div class="tool-panel-section">
+        <h3 class="panel-title" data-i18n-text="s9Title"></h3>
+        <p class="panel-helper" data-i18n-text="s9Helper"></p>
+        <button class="btn secondary" id="btn-add-manual-receiver" style="margin-bottom:8px" data-i18n-text="btnAddManualReceiver"></button>
+        <div id="manual-receivers-list"></div>
+        <button class="btn ghost" id="btn-clear-all-manual" style="display:none;margin-top:6px" data-i18n-text="btnClearAllManual"></button>
+        <div id="manual-pick-status" class="pick-status" style="display:none" data-i18n-text="pickStatusActive"></div>
+      </div>
+
+      <div class="tool-panel-section">
         <div class="calc-cell">
           <button class="btn" id="btn-calc" data-i18n-text="btnCalc"></button>
           <button class="btn danger" id="btn-reset" data-i18n-text="btnReset"></button>
@@ -840,22 +1004,67 @@ html[data-theme='dark'] .crosssection-svg .cs-barrier{ fill: #2a2d33; }
 
       <div class="tool-panel-section span-2" id="bc-results">
         <h3 class="panel-title" data-i18n-text="resultsTitle"></h3>
-        <div class="stats-grid">
-          <div class="stat-box">
-            <div class="stat-label" data-i18n-text="statILMean"></div>
-            <div class="stat-value" id="stat-il-mean">&mdash;</div>
+        <section class="results-explainer">
+          <h4 class="results-explainer-title" data-i18n-text="resultsExplainerTitle"></h4>
+          <p class="results-explainer-text" data-i18n-html="resultsExplainerText"></p>
+        </section>
+        <div class="bc-results-flex">
+          <div class="bc-stats-col">
+            <div class="stats-grid">
+              <div class="stat-box">
+                <div class="stat-label" data-i18n-text="statILMean"></div>
+                <div class="stat-value" id="stat-il-mean">&mdash;</div>
+                <div class="stat-sublabel" data-i18n-text="statILMeanSub"></div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label" data-i18n-text="statILMax"></div>
+                <div class="stat-value good" id="stat-il-max">&mdash;</div>
+                <div class="stat-sublabel" data-i18n-text="statILMaxSub"></div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label" data-i18n-text="statLeqWith"></div>
+                <div class="stat-value" id="stat-leq-with">&mdash;</div>
+                <div class="stat-sublabel" data-i18n-text="statLeqWithSub"></div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label" data-i18n-text="statBelow"></div>
+                <div class="stat-value" id="stat-below">&mdash;</div>
+                <div class="stat-sublabel" data-i18n-text="statBelowSub"></div>
+              </div>
+            </div>
+            <div class="stat-row stat-row-diffracted">
+              <div class="stat-box stat-box-diff">
+                <div class="stat-label" data-i18n-text="statILMeanDiff"></div>
+                <div class="stat-value" id="stat-il-mean-diff">&mdash;</div>
+                <div class="stat-sublabel" data-i18n-text="statILMeanDiffSub"></div>
+              </div>
+              <div class="stat-box stat-box-diff">
+                <div class="stat-label" data-i18n-text="statILMaxDiff"></div>
+                <div class="stat-value good" id="stat-il-max-diff">&mdash;</div>
+                <div class="stat-sublabel" data-i18n-text="statILMaxDiffSub"></div>
+              </div>
+              <div class="stat-box stat-box-diff">
+                <div class="stat-label" data-i18n-text="statNDiff"></div>
+                <div class="stat-value" id="stat-n-diff">&mdash;</div>
+                <div class="stat-sublabel" data-i18n-text="statNDiffSub"></div>
+              </div>
+            </div>
           </div>
-          <div class="stat-box">
-            <div class="stat-label" data-i18n-text="statILMax"></div>
-            <div class="stat-value good" id="stat-il-max">&mdash;</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label" data-i18n-text="statLeqWith"></div>
-            <div class="stat-value" id="stat-leq-with">&mdash;</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label" data-i18n-text="statBelow"></div>
-            <div class="stat-value" id="stat-below">&mdash;</div>
+          <div class="manual-receivers-table-wrap" id="manual-receivers-table-wrap" style="display:none">
+            <h4 class="manual-table-title" data-i18n-text="manualTableTitle"></h4>
+            <table class="manual-receivers-table">
+              <thead>
+                <tr>
+                  <th data-i18n-text="manualTableColLabel"></th>
+                  <th data-i18n-text="manualTableColDist"></th>
+                  <th data-i18n-text="manualTableColLeqNo"></th>
+                  <th data-i18n-text="manualTableColLeqW"></th>
+                  <th data-i18n-text="manualTableColIL"></th>
+                  <th data-i18n-text="manualTableColStatus"></th>
+                </tr>
+              </thead>
+              <tbody id="manual-receivers-tbody"></tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -932,7 +1141,7 @@ html[data-theme='dark'] .crosssection-svg .cs-barrier{ fill: #2a2d33; }
 
 <footer class="app-footer">
   <div class="container">
-    noise-barrier-calc v0.7 &middot; <a href="https://stline.it/open-lab" target="_blank" rel="noopener">ST-LINE Open Lab</a>
+    noise-barrier-calc v0.8 &middot; <a href="https://stline.it/open-lab" target="_blank" rel="noopener">ST-LINE Open Lab</a>
     &middot; Apache-2.0 &middot; ISO 9613-2:1996 §7.4 / Maekawa 1968
   </div>
 </footer>
@@ -942,7 +1151,7 @@ html[data-theme='dark'] .crosssection-svg .cs-barrier{ fill: #2a2d33; }
 <script>
 "use strict";
 /* =====================================================================
- * noise-barrier-calc — single-file standalone (v0.7)
+ * noise-barrier-calc — single-file standalone (v0.8)
  * Physics / OSM / screenshot inlined VERBATIM from the ST-LINE site
  * shared modules (src/lib/*), TypeScript types stripped.
  * Source: stline.it develop HEAD (post-ef726c7).
@@ -1360,7 +1569,7 @@ var STRINGS = {
     methodIsoDesc: 'Conservativo, fattore meteo K<sub>met</sub>. Max 20 dB singola.',
     methodMaekawaDesc: 'Originale, barriera infinita ideale. Max 25 dB.',
     s4Title: '4 · Griglia ricevitori',
-    gridExtentLabel: 'Estensione (m)', gridStepLabel: 'Passo (m)', groundGLabel: 'G suolo',
+    gridBufferLabel: 'Buffer attorno alla sorgente (m)', gridStepLabel: 'Passo (m)', groundGLabel: 'G suolo',
     s5Title: '5 · Atmosfera',
     s6Title: '6 · Limite normativo',
     classLabel: 'DPCM 14/11/97 — Classe', classNone: 'Nessun limite',
@@ -1381,6 +1590,41 @@ var STRINGS = {
     btnCalc: '⚡ Calcola', btnReset: '↺ Reset tutto',
     resultsTitle: 'Risultati', statILMean: 'IL medio', statILMax: 'IL max',
     statLeqWith: 'Leq con barr.', statBelow: 'Sotto limite',
+    // v0.8 — Result notes + diffracted stats + manual receivers
+    resultsExplainerTitle: 'Cosa rappresentano i risultati',
+    resultsExplainerText: 'Le statistiche sono calcolate <strong>su tutta la griglia di ricevitori</strong> (estensione adattiva al buffer impostato). <strong>IL MEDIO</strong> e <strong>IL MAX</strong> sono media aritmetica e massimo dell\'Insertion Loss su tutti i ricevitori, incluse zone davanti alla barriera (IL≈0) e laterali. Per una valutazione mirata dell\'efficacia della barriera vedi le statistiche aggiuntive "solo diffratti" qui sotto (ricevitori che effettivamente intercettano la barriera). <strong>LEQ CON BARR.</strong> è la <em>media energetica</em> (10·log₁₀ delle pressioni quadrate), coerente col significato fisico del livello sonoro. <strong>SOTTO LIMITE</strong> è la percentuale di ricevitori che rispettano il limite normativo selezionato.',
+    statILMeanSub: 'media aritmetica su tutti i ricevitori',
+    statILMaxSub: 'singolo ricevitore con massima attenuazione',
+    statLeqWithSub: 'media energetica (dB sommati in pressione)',
+    statBelowSub: 'ricevitori che rispettano il limite normativo',
+    statILMeanDiff: 'IL MEDIO (diffratti)',
+    statILMaxDiff: 'IL MAX (diffratti)',
+    statNDiff: 'RICEVITORI DIFFRATTI',
+    statILMeanDiffSub: 'media su soli ricevitori dietro la barriera',
+    statILMaxDiffSub: 'massimo IL nella zona di influenza barriera',
+    statNDiffSub: 'su totale ricevitori della griglia',
+    hMissingWarn: '⚠ Altezza barriera non specificata — calcolo eseguito senza barriera.',
+    s9Title: '9 · Ricevitori manuali',
+    s9Helper: 'Posiziona fino a 5 ricevitori in punti specifici (es. facciate sensibili) per risultati puntuali oltre alla griglia.',
+    btnAddManualReceiver: '🎯 Aggiungi ricevitore sulla mappa',
+    btnClearAllManual: '🗑 Cancella tutti i ricevitori manuali',
+    pickStatusActive: 'Click sulla mappa per posizionare il ricevitore (ESC per annullare)',
+    manualReceiverPlaceholder: 'es. R1 facciata casa',
+    manualRBtnDelete: '🗑',
+    manualDeleteTitle: 'Cancella ricevitore',
+    manualMaxReached: 'Massimo 5 ricevitori manuali raggiunto.',
+    manualClearConfirm: 'Cancellare tutti i ricevitori manuali?',
+    manualTableTitle: 'Risultati ricevitori manuali',
+    manualTableColLabel: 'Etichetta',
+    manualTableColDist: 'Dist. sorgente',
+    manualTableColLeqNo: 'Leq senza',
+    manualTableColLeqW: 'Leq con',
+    manualTableColIL: 'IL',
+    manualTableColStatus: 'Stato',
+    manualTableNotComputed: 'Aggiungi e calcola per i risultati',
+    manualStatusOk: '✓ sotto limite',
+    manualStatusOver: '✗ sopra limite',
+    manualStatusNoLimit: '—',
     toolsTitle: 'Strumenti', btnCrossSection: '⊥ Sezione verticale',
     btnExportCsv: '↓ Esporta CSV ricevitori',
     toolsNote: 'La sezione mostra il path sorgente→ricevitore con barriera, raggio diretto e diffratto.',
@@ -1427,7 +1671,7 @@ var STRINGS = {
     jsNoBarrierConfirm: 'Nessuna barriera disegnata. Procedere comunque (calcolo solo Leq senza barriera)?',
     jsResetConfirm: 'Cancellare tutto e ricominciare? (sorgente, barriera, risultati)',
     jsInit: 'Inizializzazione…', jsRendering: 'Rendering mappa…',
-    jsNoValidReceiver: '⚠ Nessun ricevitore valido. Aumenta Lw o riduci estensione.',
+    jsNoValidReceiver: '⚠ Nessun ricevitore valido. Aumenta Lw o riduci il buffer.',
     jsRunCalcFirst: 'Esegui prima un calcolo.',
     jsViewChanged: '⚠ Vista cambiata — ricalcola per aggiornare la mappa',
     jsMethodChanged: '⚠ Metodo cambiato — ricalcola per aggiornare la mappa',
@@ -1495,7 +1739,7 @@ var STRINGS = {
     methodIsoDesc: 'Conservative, K<sub>met</sub> weather factor. Max 20 dB single.',
     methodMaekawaDesc: 'Original, ideal infinite barrier. Max 25 dB.',
     s4Title: '4 · Receiver grid',
-    gridExtentLabel: 'Extent (m)', gridStepLabel: 'Step (m)', groundGLabel: 'Ground G',
+    gridBufferLabel: 'Buffer around source (m)', gridStepLabel: 'Step (m)', groundGLabel: 'Ground G',
     s5Title: '5 · Atmosphere',
     s6Title: '6 · Regulatory limit',
     classLabel: 'DPCM 14/11/97 — Class', classNone: 'No limit',
@@ -1516,6 +1760,41 @@ var STRINGS = {
     btnCalc: '⚡ Compute', btnReset: '↺ Reset all',
     resultsTitle: 'Results', statILMean: 'Mean IL', statILMax: 'Max IL',
     statLeqWith: 'Leq with barr.', statBelow: 'Below limit',
+    // v0.8 — Result notes + diffracted stats + manual receivers
+    resultsExplainerTitle: 'What the results represent',
+    resultsExplainerText: 'Statistics are computed <strong>over the entire receiver grid</strong> (extent adapts to the set buffer). <strong>MEAN IL</strong> and <strong>MAX IL</strong> are the arithmetic mean and maximum of Insertion Loss across all receivers, including zones in front of the barrier (IL≈0) and lateral zones. For a focused assessment of barrier effectiveness see the additional "diffracted only" statistics below (receivers actually intercepting the barrier). <strong>LEQ WITH BARR.</strong> is the <em>energy-averaged</em> mean (10·log₁₀ of squared pressures), consistent with the physical meaning of sound level. <strong>BELOW LIMIT</strong> is the percentage of receivers complying with the selected regulatory limit.',
+    statILMeanSub: 'arithmetic mean across all receivers',
+    statILMaxSub: 'single receiver with maximum attenuation',
+    statLeqWithSub: 'energy mean (dB sound-pressure averaged)',
+    statBelowSub: 'receivers complying with the regulatory limit',
+    statILMeanDiff: 'MEAN IL (diffracted)',
+    statILMaxDiff: 'MAX IL (diffracted)',
+    statNDiff: 'DIFFRACTED RECEIVERS',
+    statILMeanDiffSub: 'mean over receivers behind the barrier only',
+    statILMaxDiffSub: 'maximum IL in the barrier influence zone',
+    statNDiffSub: 'out of total grid receivers',
+    hMissingWarn: '⚠ Barrier height not specified — calculation performed without barrier.',
+    s9Title: '9 · Manual receivers',
+    s9Helper: 'Place up to 5 receivers at specific points (e.g. sensitive facades) for pointwise results in addition to the grid.',
+    btnAddManualReceiver: '🎯 Add receiver on map',
+    btnClearAllManual: '🗑 Clear all manual receivers',
+    pickStatusActive: 'Click on the map to place the receiver (ESC to cancel)',
+    manualReceiverPlaceholder: 'e.g. R1 house facade',
+    manualRBtnDelete: '🗑',
+    manualDeleteTitle: 'Delete receiver',
+    manualMaxReached: 'Maximum 5 manual receivers reached.',
+    manualClearConfirm: 'Clear all manual receivers?',
+    manualTableTitle: 'Manual receivers results',
+    manualTableColLabel: 'Label',
+    manualTableColDist: 'Source dist.',
+    manualTableColLeqNo: 'Leq w/o',
+    manualTableColLeqW: 'Leq with',
+    manualTableColIL: 'IL',
+    manualTableColStatus: 'Status',
+    manualTableNotComputed: 'Add and compute for results',
+    manualStatusOk: '✓ below limit',
+    manualStatusOver: '✗ above limit',
+    manualStatusNoLimit: '—',
     toolsTitle: 'Tools', btnCrossSection: '⊥ Vertical cross-section',
     btnExportCsv: '↓ Export receivers CSV',
     toolsNote: 'The cross-section shows the source→receiver path with barrier, direct and diffracted ray.',
@@ -1562,7 +1841,7 @@ var STRINGS = {
     jsNoBarrierConfirm: 'No barrier drawn. Proceed anyway (compute only Leq without barrier)?',
     jsResetConfirm: 'Clear everything and start over? (source, barrier, results)',
     jsInit: 'Initializing…', jsRendering: 'Rendering map…',
-    jsNoValidReceiver: '⚠ No valid receiver. Increase Lw or reduce extent.',
+    jsNoValidReceiver: '⚠ No valid receiver. Increase Lw or reduce buffer.',
     jsRunCalcFirst: 'Run a computation first.',
     jsViewChanged: '⚠ View changed — recompute to update the map',
     jsMethodChanged: '⚠ Method changed — recompute to update the map',
@@ -1961,6 +2240,16 @@ function initBarrierCalc() {
   var lastRefLng = null;
   var lastStep = null;
   var lastMethod = 'iso9613';
+  // v0.8 — adaptive grid (bbox + buffer) + auto-redraw + manual receivers
+  var lastGridXMin = null;
+  var lastGridXMax = null;
+  var lastGridYMin = null;
+  var lastGridYMax = null;
+  var lastViewMode = null;
+  var lastManualReceivers = null;
+  var manualReceivers = [];
+  var MAX_MANUAL_RECEIVERS = 5;
+  var pickReceiverMode = false;
 
   var buildings = [];
   var buildingLayer = null;
@@ -1983,7 +2272,7 @@ function initBarrierCalc() {
       L.polygon(b.polygonLatLng, opts).bindTooltip(
         'h ' + b.height.toFixed(1) + ' m' + (isEstimated ? ' ' + s.bldEstTag : '') +
         (b.tags && b.tags.name ? ' · ' + b.tags.name : ''),
-        { direction: 'top', sticky: true }
+        { direction: 'top', offset: [0, -8], sticky: true }
       ).addTo(buildingLayer);
     });
   }
@@ -2041,7 +2330,7 @@ function initBarrierCalc() {
     renderBuildings();
   });
   document.getElementById('buildings-affect-calc').addEventListener('change', function () { updateParticipationBadge(); });
-  document.getElementById('grid-extent').addEventListener('input', function () { updateParticipationBadge(); });
+  document.getElementById('grid-buffer').addEventListener('input', function () { updateParticipationBadge(); });
 
   // ===== MODE TOGGLE =====
   var modeLineBtn = document.getElementById('mode-line');
@@ -2253,7 +2542,10 @@ function initBarrierCalc() {
     updateBarrierStatus();
     clearResult();
   }
-  function clearResult() {
+  // v0.8 — keepManual default true: clearSource/clearBarrier/recompute
+  // do NOT wipe manual receivers; only "Reset tutto" passes keepManual:false.
+  function clearResult(opts) {
+    var keepManual = !(opts && opts.keepManual === false);
     if (resultLayer) { map.removeLayer(resultLayer); resultLayer = null; }
     document.getElementById('status-bar').classList.remove('active');
     document.getElementById('cursor-readout').classList.remove('active');
@@ -2261,9 +2553,19 @@ function initBarrierCalc() {
     document.getElementById('btn-export-csv').disabled = true;
     document.getElementById('crosssection-panel').classList.remove('active');
     lastGrid = null;
-    ['stat-il-mean', 'stat-il-max', 'stat-leq-with', 'stat-below'].forEach(function (id) {
-      document.getElementById(id).textContent = '—';
+    ['stat-il-mean', 'stat-il-max', 'stat-leq-with', 'stat-below',
+     'stat-il-mean-diff', 'stat-il-max-diff', 'stat-n-diff'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = '—';
     });
+    if (!keepManual) {
+      manualReceivers.forEach(function (r) { map.removeLayer(r.marker); });
+      manualReceivers.length = 0;
+      lastManualReceivers = null;
+      cancelReceiverPick();
+      if (typeof renderManualReceiversList === 'function') renderManualReceiversList();
+      if (typeof renderManualReceiversTable === 'function') renderManualReceiversTable();
+    }
   }
 
   function updateSourceStatus() {
@@ -2349,7 +2651,7 @@ function initBarrierCalc() {
     if (!confirm(s.jsResetConfirm)) return;
     clearSource();
     clearBarrier();
-    clearResult();
+    clearResult({ keepManual: false });
     stopDrawing();
     document.getElementById('calc-status').textContent = '';
   });
@@ -2399,8 +2701,17 @@ function initBarrierCalc() {
     if (barrierLatLng && barrierLatLng.length) pts = pts.concat(barrierLatLng);
     var refLat = sourceLatLng.reduce(function (a, p) { return a + p[0]; }, 0) / sourceLatLng.length;
     var refLng = sourceLatLng.reduce(function (a, p) { return a + p[1]; }, 0) / sourceLatLng.length;
-    var halfExt = parseFloat(document.getElementById('grid-extent').value) / 2;
-    var corners = [[-halfExt, -halfExt], [halfExt, -halfExt], [-halfExt, halfExt], [halfExt, halfExt]];
+    // v0.8 — grid ricevitori adattiva: bbox sorgente (coords locali)
+    // + buffer per lato (era "extent/2" fisso centrato sul centroide).
+    var buffer = parseFloat(document.getElementById('grid-buffer').value);
+    var srcLocal = sourceLatLng.map(function (p) { return latlngToLocal(p[0], p[1], refLat, refLng); });
+    var xs = srcLocal.map(function (c) { return c[0]; });
+    var ys = srcLocal.map(function (c) { return c[1]; });
+    var xMin = Math.min.apply(null, xs) - buffer;
+    var xMax = Math.max.apply(null, xs) + buffer;
+    var yMin = Math.min.apply(null, ys) - buffer;
+    var yMax = Math.max.apply(null, ys) + buffer;
+    var corners = [[xMin, yMin], [xMax, yMin], [xMin, yMax], [xMax, yMax]];
     for (var i = 0; i < corners.length; i++) {
       pts.push(localToLatLng(corners[i][0], corners[i][1], refLat, refLng));
     }
@@ -2429,7 +2740,7 @@ function initBarrierCalc() {
     var Lw_point = parseFloat(document.getElementById('lw-point').value);
     var hs = parseFloat(document.getElementById('src-h').value);
     var hr = parseFloat(document.getElementById('rec-h').value);
-    var extent = parseFloat(document.getElementById('grid-extent').value);
+    var buffer = parseFloat(document.getElementById('grid-buffer').value);
     var step = parseFloat(document.getElementById('grid-step').value);
     var G = parseFloat(document.getElementById('ground-G').value);
     var T = parseFloat(document.getElementById('atm-T').value);
@@ -2437,7 +2748,20 @@ function initBarrierCalc() {
     var spectrumKey = document.getElementById('src-spectrum').value;
     var diffMethod = document.querySelector('input[name="method"]:checked').value;
     var spectrum = SPECTRA[spectrumKey];
-    var hb_total = parseFloat(document.getElementById('barrier-h').value) + parseFloat(document.getElementById('barrier-base').value);
+    // v0.8 — Fix difensivo: campo altezza barriera vuoto → parseFloat('')
+    // = NaN → propagazione catastrofica (IL = Infinity). Fallback: barriera
+    // assente (hb_total = base se valido, altrimenti 0), calcolo NON
+    // bloccato, warning prefisso a calc-status.
+    var _h_in = parseFloat(document.getElementById('barrier-h').value);
+    var _hb_in = parseFloat(document.getElementById('barrier-base').value);
+    var hb_total;
+    var hMissingWarn = false;
+    if (isNaN(_h_in)) {
+      hb_total = isNaN(_hb_in) ? 0 : _hb_in;
+      hMissingWarn = true;
+    } else {
+      hb_total = _h_in + (isNaN(_hb_in) ? 0 : _hb_in);
+    }
     var viewMode = document.getElementById('view-mode').value;
     var limit = (function () {
       var v = document.getElementById('class-norm').value;
@@ -2490,29 +2814,45 @@ function initBarrierCalc() {
         });
       }
 
-      var halfExt = extent / 2;
+      // v0.8 — Grid ricevitori adattiva: bbox sorgente (coords locali)
+      // + buffer per lato, snap to step (consistente con renderIsolines).
+      // Per sorgente puntuale bbox = 0×0 → grid ±buffer = backward-compat
+      // identico al vecchio comportamento extent=2·buffer centrato.
+      var srcXs = sourceLocal.map(function (c) { return c[0]; });
+      var srcYs = sourceLocal.map(function (c) { return c[1]; });
+      var srcXMin = Math.min.apply(null, srcXs);
+      var srcXMax = Math.max.apply(null, srcXs);
+      var srcYMin = Math.min.apply(null, srcYs);
+      var srcYMax = Math.max.apply(null, srcYs);
+      var snapToStep = function (v, dir) {
+        return dir > 0 ? Math.ceil(v / step) * step : Math.floor(v / step) * step;
+      };
+      var gridXMin = snapToStep(srcXMin - buffer, -1);
+      var gridXMax = snapToStep(srcXMax + buffer, +1);
+      var gridYMin = snapToStep(srcYMin - buffer, -1);
+      var gridYMax = snapToStep(srcYMax + buffer, +1);
+
       var grid = [];
       var nPoints = 0;
       var nDiff = 0;
       var nRecBuilding = 0;
       var nPairBuilding = 0;
 
-      var areaXMin, areaXMax, areaYMin, areaYMax;
-      if (srcMode === 'area') {
-        var axs = sourceLocal.map(function (c) { return c[0]; });
-        var ays = sourceLocal.map(function (c) { return c[1]; });
-        areaXMin = Math.min.apply(null, axs); areaXMax = Math.max.apply(null, axs);
-        areaYMin = Math.min.apply(null, ays); areaYMax = Math.max.apply(null, ays);
-      }
+      // Sorgente areale: skip ricevitori interni al footprint sorgente.
+      var areaXMin = srcXMin, areaXMax = srcXMax;
+      var areaYMin = srcYMin, areaYMax = srcYMax;
 
-      var dyValues = [];
-      for (var dy0 = -halfExt; dy0 <= halfExt; dy0 += step) dyValues.push(dy0);
+      var dxValues = [], dyValues = [];
+      for (var dxv = gridXMin; dxv <= gridXMax; dxv += step) dxValues.push(dxv);
+      for (var dyv = gridYMin; dyv <= gridYMax; dyv += step) dyValues.push(dyv);
       var totalRows = dyValues.length;
+      var totalCols = dxValues.length;
 
       function processRow(rowIdx) {
         if (rowIdx >= totalRows) return Promise.resolve();
         var dy = dyValues[rowIdx];
-        for (var dx = -halfExt; dx <= halfExt; dx += step) {
+        for (var colIdx = 0; colIdx < totalCols; colIdx++) {
+          var dx = dxValues[colIdx];
           var rx = dx, ry = dy;
 
           if (srcMode === 'area') {
@@ -2591,6 +2931,65 @@ function initBarrierCalc() {
       }
 
       return processRow(0).then(function () {
+        // v0.8 — Ricevitori manuali: stessa pass, stessa logica
+        // worst-screen del loop griglia. Indipendenti dalla validità
+        // della griglia → calcolati anche se la griglia è vuota.
+        if (manualReceivers.length > 0) {
+          for (var mi = 0; mi < manualReceivers.length; mi++) {
+            var r = manualReceivers[mi];
+            var mloc = latlngToLocal(r.lat, r.lng, refLat, refLng);
+            var mrx = mloc[0], mry = mloc[1];
+            var mEnergyNoB = 0, mEnergyWithB = 0, mDiff = false;
+            for (var mspi = 0; mspi < sourcePoints.length; mspi++) {
+              var msx = sourcePoints[mspi][0], msy = sourcePoints[mspi][1];
+              var mdist = Math.sqrt((mrx - msx) * (mrx - msx) + (mry - msy) * (mry - msy));
+              if (mdist < 1) continue;
+              var mLn = propagatePoint({ Lw: LwPerPoint, spectrum: spectrum, dist: mdist, hs: hs, hr: hr, T: T, RH: RH, G: G, diffDelta: 0, method: diffMethod });
+              mEnergyNoB += Math.pow(10, mLn / 10);
+              var mDelta = 0, mDsb = 0, mDsr = 0;
+              if (barrierLocal) {
+                var mhit = firstBarrierHit(msx, msy, mrx, mry, barrierLocal);
+                if (mhit) {
+                  var mdsb = Math.sqrt(Math.pow(mhit.x - msx, 2) + Math.pow(mhit.y - msy, 2));
+                  var mdbr = Math.sqrt(Math.pow(mrx - mhit.x, 2) + Math.pow(mry - mhit.y, 2));
+                  mDelta = pathDelta(mdsb, mdbr, hs, hr, hb_total);
+                  if (mDelta > 0) { mDiff = true; mDsb = mdsb; mDsr = mdist; }
+                }
+              }
+              if (buildingsLocal) {
+                for (var mbli = 0; mbli < buildingsLocal.length; mbli++) {
+                  var mbl = buildingsLocal[mbli];
+                  var mbhit = firstBarrierHit(msx, msy, mrx, mry, mbl.poly);
+                  if (!mbhit) continue;
+                  var mdsbb = Math.sqrt(Math.pow(mbhit.x - msx, 2) + Math.pow(mbhit.y - msy, 2));
+                  var mdbrb = Math.sqrt(Math.pow(mrx - mbhit.x, 2) + Math.pow(mry - mbhit.y, 2));
+                  var mdd = pathDelta(mdsbb, mdbrb, hs, hr, mbl.height);
+                  if (mdd > mDelta) { mDelta = mdd; mDiff = true; mDsb = mdsbb; mDsr = mdist; }
+                }
+              }
+              var mLw = propagatePoint({ Lw: LwPerPoint, spectrum: spectrum, dist: mdist, hs: hs, hr: hr, T: T, RH: RH, G: G, diffDelta: mDelta, method: diffMethod, d_ss: mDsb, d_sr: mDsr });
+              mEnergyWithB += Math.pow(10, mLw / 10);
+            }
+            r.Leq_no = 10 * Math.log10(mEnergyNoB);
+            r.Leq_w = mEnergyWithB > 0 ? 10 * Math.log10(mEnergyWithB) : -Infinity;
+            r.IL = r.Leq_no - r.Leq_w;
+            r.diffracted = mDiff;
+            r.distSrc = Math.sqrt(mrx * mrx + mry * mry);
+            r.marker.setTooltipContent(
+              '<strong>' + mrEsc(r.label) + '</strong><br>' +
+              s.statLeqWith + ': ' + (isFinite(r.Leq_w) ? r.Leq_w.toFixed(1) + ' dBA' : '—') + '<br>' +
+              '<strong>IL: ' + r.IL.toFixed(1) + ' dB</strong>' + (r.diffracted ? ' · ' + s.diffractedTag : '')
+            );
+          }
+          lastManualReceivers = manualReceivers.map(function (r) {
+            return { id: r.id, label: r.label, lat: r.lat, lng: r.lng,
+                     IL: r.IL, Leq_no: r.Leq_no, Leq_w: r.Leq_w,
+                     diffracted: r.diffracted, distSrc: r.distSrc };
+          });
+          if (typeof renderManualReceiversTable === 'function') renderManualReceiversTable();
+          document.getElementById('btn-export-csv').disabled = false;
+        }
+
         if (grid.length === 0) {
           hideSpinner();
           document.getElementById('calc-status').textContent = s.jsNoValidReceiver;
@@ -2604,39 +3003,22 @@ function initBarrierCalc() {
           var wantBands = document.getElementById('show-bands').checked;
           var wantLines = document.getElementById('show-isolines').checked;
           if ((wantBands || wantLines) && grid.length > 4) {
-            renderIsolines(grid, refLat, refLng, extent, step, viewMode);
+            renderIsolines(grid, refLat, refLng, gridXMin, gridXMax,
+                           gridYMin, gridYMax, step, viewMode);
           }
 
-          if (document.getElementById('show-grid').checked) {
-            grid.forEach(function (p) {
-              var color, value;
-              if (viewMode === 'il') {
-                color = colorForIL(p.IL);
-                value = 'IL ' + p.IL.toFixed(1) + ' dB';
-              } else if (viewMode === 'with') {
-                color = colorForLeq(p.Leq_w);
-                value = p.Leq_w.toFixed(1) + ' dBA ' + s.withSuffix;
-              } else {
-                color = colorForLeq(p.Leq_no);
-                value = p.Leq_no.toFixed(1) + ' dBA ' + s.withoutSuffix;
-              }
-              L.circleMarker([p.lat, p.lng], {
-                radius: step * 0.6, fillColor: color, fillOpacity: 0.75, stroke: false
-              }).bindTooltip(
-                '<strong>' + value + '</strong><br>' +
-                s.leqWithoutShort + ': ' + p.Leq_no.toFixed(1) + ' dBA<br>' +
-                s.leqWithShort + ': ' + p.Leq_w.toFixed(1) + ' dBA<br>' +
-                '<strong style="color:' + colorForIL(p.IL) + '">IL: ' + p.IL.toFixed(1) + ' dB</strong>' + (p.diffracted ? ' · ' + s.diffractedTag : ''),
-                { direction: 'top', sticky: true, opacity: 0.95 }
-              ).addTo(resultLayer);
-            });
-          }
+          renderGridPoints(grid, viewMode, step);
 
           lastGrid = grid;
           lastRefLat = refLat;
           lastRefLng = refLng;
           lastStep = step;
           lastMethod = diffMethod;
+          lastGridXMin = gridXMin;
+          lastGridXMax = gridXMax;
+          lastGridYMin = gridYMin;
+          lastGridYMax = gridYMax;
+          lastViewMode = viewMode;
           document.getElementById('cursor-readout').classList.add('active');
           document.getElementById('btn-crosssection').disabled = false;
           document.getElementById('btn-export-csv').disabled = false;
@@ -2648,14 +3030,31 @@ function initBarrierCalc() {
           var leq_w_mean = 10 * Math.log10(Leqs_w.reduce(function (a, v) { return a + Math.pow(10, v / 10); }, 0) / Leqs_w.length);
           var below = limit ? Leqs_w.filter(function (v) { return v < limit; }).length / Leqs_w.length * 100 : null;
 
+          // v0.8 — statistiche "solo diffratti": subset di ricevitori
+          // che effettivamente intercettano la barriera (più indicativo
+          // dell'efficacia della barriera della media su tutta la griglia).
+          var ILs_diff = grid.filter(function (p) { return p.diffracted; }).map(function (p) { return p.IL; });
+          var il_mean_diff = ILs_diff.length > 0
+            ? ILs_diff.reduce(function (a, v) { return a + v; }, 0) / ILs_diff.length : null;
+          var il_max_diff = ILs_diff.length > 0 ? Math.max.apply(null, ILs_diff) : null;
+
           document.getElementById('stat-il-mean').textContent = il_mean.toFixed(1) + ' dB';
           document.getElementById('stat-il-max').textContent = il_max.toFixed(1) + ' dB';
           document.getElementById('stat-leq-with').textContent = leq_w_mean.toFixed(1);
           document.getElementById('stat-below').textContent = below !== null ? Math.round(below) + '%' : '—';
+          document.getElementById('stat-il-mean-diff').textContent =
+            il_mean_diff !== null ? il_mean_diff.toFixed(1) + ' dB' : '—';
+          document.getElementById('stat-il-max-diff').textContent =
+            il_max_diff !== null ? il_max_diff.toFixed(1) + ' dB' : '—';
+          document.getElementById('stat-n-diff').textContent = nDiff + ' / ' + grid.length;
 
           var t1 = performance.now();
           document.getElementById('calc-status').textContent =
             nPoints + ' ' + s.receivers + ' · ' + sourcePoints.length + ' ' + s.pointSources + ' · ' + (t1 - t0).toFixed(0) + ' ms';
+          if (hMissingWarn) {
+            document.getElementById('calc-status').textContent =
+              s.hMissingWarn + ' · ' + document.getElementById('calc-status').textContent;
+          }
 
           document.getElementById('status-bar').classList.add('active');
           var methodLabel = diffMethod === 'iso9613' ? 'ISO 9613-2 §7.4' : 'Maekawa (1968)';
@@ -2734,16 +3133,22 @@ function initBarrierCalc() {
     unitEl.textContent = unit;
   }
 
-  function renderIsolines(grid, refLat, refLng, extent, step, viewMode) {
-    var N = Math.floor(extent / step) + 1;
-    var matrix = new Array(N * N).fill(-Infinity);
-    var halfExt = extent / 2;
+  // v0.8 — rectangular Nx×Ny matrix with explicit origin (gridXMin,
+  // gridYMin). Old (extent, halfExt) approach broke for non-centered/
+  // non-square grids (extended line/area sources truncated visually);
+  // also fixes a ~half-step contour-overlay misregistration latent in
+  // the old (x − N/2)*step mapping.
+  function renderIsolines(grid, refLat, refLng, gridXMin, gridXMax,
+                          gridYMin, gridYMax, step, viewMode) {
+    var Nx = Math.round((gridXMax - gridXMin) / step) + 1;
+    var Ny = Math.round((gridYMax - gridYMin) / step) + 1;
+    var matrix = new Array(Nx * Ny).fill(-Infinity);
     grid.forEach(function (p) {
-      var i = Math.round((p.ry + halfExt) / step);
-      var j = Math.round((p.rx + halfExt) / step);
-      if (i >= 0 && i < N && j >= 0 && j < N) {
-        matrix[i * N + j] = (viewMode === 'il') ? p.IL :
-                            (viewMode === 'with') ? p.Leq_w : p.Leq_no;
+      var j = Math.round((p.rx - gridXMin) / step);
+      var i = Math.round((p.ry - gridYMin) / step);
+      if (i >= 0 && i < Ny && j >= 0 && j < Nx) {
+        matrix[i * Nx + j] = (viewMode === 'il') ? p.IL :
+                             (viewMode === 'with') ? p.Leq_w : p.Leq_no;
       }
     });
     var fillValue = (viewMode === 'il') ? 0 : 30;
@@ -2760,14 +3165,14 @@ function initBarrierCalc() {
 
     var ringToLatLngs = function (ring) {
       return ring.map(function (xy) {
-        var rx = (xy[0] - N / 2) * step;
-        var ry = (xy[1] - N / 2) * step;
+        var rx = gridXMin + xy[0] * step;
+        var ry = gridYMin + xy[1] * step;
         return localToLatLng(rx, ry, refLat, refLng);
       });
     };
 
     if (showBands) {
-      var contoursB = d3.contours().size([N, N]).thresholds(thresholds)(matrix);
+      var contoursB = d3.contours().size([Nx, Ny]).thresholds(thresholds)(matrix);
       contoursB.forEach(function (c, idx) {
         var nextThr = thresholds[idx + 1];
         var bandMid = nextThr !== undefined ? (c.value + nextThr) / 2 : c.value + 2.5;
@@ -2786,7 +3191,7 @@ function initBarrierCalc() {
     }
 
     if (showLines) {
-      var contoursL = d3.contours().size([N, N]).thresholds(thresholds)(matrix);
+      var contoursL = d3.contours().size([Nx, Ny]).thresholds(thresholds)(matrix);
       contoursL.forEach(function (c) {
         var lvl = c.value;
         var lineColor = viewMode === 'il' ? colorForIL(lvl) : colorForLeq(lvl);
@@ -2844,6 +3249,7 @@ function initBarrierCalc() {
     pickMode = !pickMode;
     var mapEl = document.getElementById('map');
     if (pickMode) {
+      cancelReceiverPick();  // v0.8 mutex: niente pick ricevitore manuale attivo
       mapEl.classList.add('pick-mode');
       fabHint.textContent = s.hintPickReceiver;
       fabHint.classList.add('active');
@@ -2854,7 +3260,7 @@ function initBarrierCalc() {
   });
 
   map.on('click', function (e) {
-    if (!pickMode || !lastGrid) return;
+    if (pickReceiverMode || !pickMode || !lastGrid) return;
     var loc = latlngToLocal(e.latlng.lat, e.latlng.lng, lastRefLat, lastRefLng);
     var cx = loc[0], cy = loc[1];
     var nearest = null;
@@ -2874,7 +3280,10 @@ function initBarrierCalc() {
   function renderCrossSection(receiver) {
     var hs = parseFloat(document.getElementById('src-h').value);
     var hr = parseFloat(document.getElementById('rec-h').value);
-    var hb_total = parseFloat(document.getElementById('barrier-h').value) + parseFloat(document.getElementById('barrier-base').value);
+    // v0.8 — NaN-safe: campi h/base vuoti non devono produrre geometria invalida.
+    var _h = parseFloat(document.getElementById('barrier-h').value);
+    var _hb = parseFloat(document.getElementById('barrier-base').value);
+    var hb_total = (isNaN(_h) ? 0 : _h) + (isNaN(_hb) ? 0 : _hb);
 
     if (!sourceLatLng || sourceLatLng.length === 0) return;
     var sourceLocalCs = sourceLatLng.map(function (p) { return latlngToLocal(p[0], p[1], lastRefLat, lastRefLng); });
@@ -3024,23 +3433,47 @@ function initBarrierCalc() {
 
   // ===== EXPORT CSV =====
   document.getElementById('btn-export-csv').addEventListener('click', function () {
-    if (!lastGrid || lastGrid.length === 0) {
+    var hasGrid = lastGrid && lastGrid.length > 0;
+    var hasManual = lastManualReceivers && lastManualReceivers.length > 0;
+    if (!hasGrid && !hasManual) {
       alert(s.jsRunCalcFirst);
       return;
     }
-    var rows = ['lat,lon,distance_m,leq_no_barrier_dBA,leq_with_barrier_dBA,insertion_loss_dB,diffracted'];
-    for (var i = 0; i < lastGrid.length; i++) {
-      var p = lastGrid[i];
-      var distSrc = Math.sqrt(p.rx * p.rx + p.ry * p.ry);
-      rows.push([
-        p.lat.toFixed(7),
-        p.lng.toFixed(7),
-        distSrc.toFixed(1),
-        p.Leq_no.toFixed(2),
-        isFinite(p.Leq_w) ? p.Leq_w.toFixed(2) : '',
-        p.IL.toFixed(2),
-        p.diffracted ? 'true' : 'false'
-      ].join(','));
+    // v0.8 — schema esteso: colonne `label` (prima) e `manual` (ultima).
+    var csvField = function (v) { return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var rows = ['label,lat,lon,distance_m,leq_no_barrier_dBA,leq_with_barrier_dBA,insertion_loss_dB,diffracted,manual'];
+    if (hasGrid) {
+      for (var i = 0; i < lastGrid.length; i++) {
+        var p = lastGrid[i];
+        var distSrc = Math.sqrt(p.rx * p.rx + p.ry * p.ry);
+        rows.push([
+          '',
+          p.lat.toFixed(7),
+          p.lng.toFixed(7),
+          distSrc.toFixed(1),
+          p.Leq_no.toFixed(2),
+          isFinite(p.Leq_w) ? p.Leq_w.toFixed(2) : '',
+          p.IL.toFixed(2),
+          p.diffracted ? 'true' : 'false',
+          'false'
+        ].join(','));
+      }
+    }
+    if (hasManual) {
+      for (var mri = 0; mri < lastManualReceivers.length; mri++) {
+        var mr = lastManualReceivers[mri];
+        rows.push([
+          csvField(mr.label),
+          mr.lat.toFixed(7),
+          mr.lng.toFixed(7),
+          mr.distSrc.toFixed(1),
+          mr.Leq_no.toFixed(2),
+          isFinite(mr.Leq_w) ? mr.Leq_w.toFixed(2) : '',
+          mr.IL.toFixed(2),
+          mr.diffracted ? 'true' : 'false',
+          'true'
+        ].join(','));
+      }
     }
     var csv = rows.join('\n');
     var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -3081,12 +3514,261 @@ function initBarrierCalc() {
     }
   });
 
-  // ===== VIEW MODE + METHOD listeners =====
-  document.getElementById('view-mode').addEventListener('change', function (e) {
-    updateLegend(e.target.value);
-    if (lastGrid) {
-      document.getElementById('calc-status').textContent = s.jsViewChanged;
+  // ===========================================================
+  // v0.8 — MANUAL RECEIVERS + grid-points helper + view redraw
+  // ===========================================================
+  function mrEsc(str) {
+    return String(str).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+  }
+
+  function mrIcon(label) {
+    return L.divIcon({
+      className: 'manual-receiver-marker',
+      html: '<div class="mr-pin">' + mrEsc(label) + '</div>',
+      iconSize: [32, 41], iconAnchor: [16, 39]
+    });
+  }
+
+  function cancelReceiverPick() {
+    if (!pickReceiverMode) return;
+    pickReceiverMode = false;
+    var ps = document.getElementById('manual-pick-status');
+    if (ps) ps.style.display = 'none';
+    document.getElementById('map').style.cursor = '';
+  }
+
+  // Grid points overlay (circle markers, opt-in via "show-grid"):
+  // estratto da computePropagation → riusabile da redrawIsolines così
+  // i marker persistono al cambio view-mode (prima sparivano col
+  // clearLayers e tornavano solo dopo un "Calcola" esplicito).
+  function renderGridPoints(grid, viewMode, step) {
+    var showGrid = document.getElementById('show-grid');
+    if (!showGrid || !showGrid.checked) return;
+    if (!grid || grid.length === 0) return;
+    grid.forEach(function (p) {
+      var color, value;
+      if (viewMode === 'il') {
+        color = colorForIL(p.IL);
+        value = 'IL ' + p.IL.toFixed(1) + ' dB';
+      } else if (viewMode === 'with') {
+        color = colorForLeq(p.Leq_w);
+        value = p.Leq_w.toFixed(1) + ' dBA ' + s.withSuffix;
+      } else {
+        color = colorForLeq(p.Leq_no);
+        value = p.Leq_no.toFixed(1) + ' dBA ' + s.withoutSuffix;
+      }
+      L.circleMarker([p.lat, p.lng], {
+        radius: step * 0.6, fillColor: color, fillOpacity: 0.75, stroke: false
+      }).bindTooltip(
+        '<strong>' + value + '</strong><br>' +
+        s.leqWithoutShort + ': ' + p.Leq_no.toFixed(1) + ' dBA<br>' +
+        s.leqWithShort + ': ' + p.Leq_w.toFixed(1) + ' dBA<br>' +
+        '<strong style="color:' + colorForIL(p.IL) + '">IL: ' + p.IL.toFixed(1) + ' dB</strong>' +
+        (p.diffracted ? ' · ' + s.diffractedTag : ''),
+        { direction: 'top', sticky: true, opacity: 0.95 }
+      ).addTo(resultLayer);
+    });
+  }
+
+  // View-mode switch — no recompute, just rerender. Ogni receiver in
+  // lastGrid porta già IL/Leq_w/Leq_no.
+  function redrawIsolines(viewMode) {
+    if (!lastGrid || lastGrid.length === 0) {
+      updateLegend(viewMode);
+      return;
     }
+    if (resultLayer) resultLayer.clearLayers();
+    var wantBands = document.getElementById('show-bands').checked;
+    var wantLines = document.getElementById('show-isolines').checked;
+    if ((wantBands || wantLines) && lastGrid.length > 4) {
+      renderIsolines(lastGrid, lastRefLat, lastRefLng,
+                     lastGridXMin, lastGridXMax, lastGridYMin, lastGridYMax,
+                     lastStep, viewMode);
+    }
+    renderGridPoints(lastGrid, viewMode, lastStep);
+    renderManualReceiversTable();
+    updateLegend(viewMode);
+    lastViewMode = viewMode;
+    var st = document.getElementById('calc-status');
+    if (st) st.textContent = '';
+  }
+
+  // Manual receivers handlers
+  document.getElementById('btn-add-manual-receiver').addEventListener('click', function () {
+    if (manualReceivers.length >= MAX_MANUAL_RECEIVERS) {
+      alert(s.manualMaxReached);
+      return;
+    }
+    pickReceiverMode = !pickReceiverMode;
+    if (pickReceiverMode) {
+      // Mutex con disegno sorgente/barriera e pick sezione verticale.
+      stopDrawing();
+      if (pickMode) {
+        pickMode = false;
+        document.getElementById('map').classList.remove('pick-mode');
+        fabHint.classList.remove('active');
+      }
+    }
+    document.getElementById('manual-pick-status').style.display =
+      pickReceiverMode ? 'block' : 'none';
+    document.getElementById('map').style.cursor = pickReceiverMode ? 'crosshair' : '';
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') cancelReceiverPick();
+  });
+
+  map.on('click', function (e) {
+    if (!pickReceiverMode) return;
+    if (manualReceivers.length >= MAX_MANUAL_RECEIVERS) { cancelReceiverPick(); return; }
+    var id = manualReceivers.length + 1;
+    var label = 'R' + id;
+    var lat = e.latlng.lat, lng = e.latlng.lng;
+    var marker = L.marker([lat, lng], { icon: mrIcon(label), draggable: true }).addTo(map);
+    marker.bindTooltip(label + ' · ' + s.manualTableNotComputed,
+      { direction: 'top', offset: [0, -14], sticky: true });
+    marker.on('dragend', function () {
+      var ll = marker.getLatLng();
+      var rec = null;
+      for (var i = 0; i < manualReceivers.length; i++) {
+        if (manualReceivers[i].marker === marker) { rec = manualReceivers[i]; break; }
+      }
+      if (!rec) return;
+      rec.lat = ll.lat; rec.lng = ll.lng;
+      rec.IL = undefined; rec.Leq_no = undefined; rec.Leq_w = undefined;
+      rec.diffracted = undefined; rec.distSrc = undefined;
+      marker.setTooltipContent(rec.label + ' · ' + s.manualTableNotComputed);
+      renderManualReceiversTable();
+    });
+    manualReceivers.push({ id: id, label: label, lat: lat, lng: lng, marker: marker });
+    cancelReceiverPick();
+    renderManualReceiversList();
+    renderManualReceiversTable();
+  });
+
+  document.getElementById('btn-clear-all-manual').addEventListener('click', function () {
+    if (manualReceivers.length === 0) return;
+    if (!confirm(s.manualClearConfirm)) return;
+    manualReceivers.forEach(function (r) { map.removeLayer(r.marker); });
+    manualReceivers.length = 0;
+    lastManualReceivers = null;
+    cancelReceiverPick();
+    renderManualReceiversList();
+    renderManualReceiversTable();
+  });
+
+  function deleteManualReceiver(id) {
+    var idx = -1;
+    for (var i = 0; i < manualReceivers.length; i++) {
+      if (manualReceivers[i].id === id) { idx = i; break; }
+    }
+    if (idx < 0) return;
+    map.removeLayer(manualReceivers[idx].marker);
+    manualReceivers.splice(idx, 1);
+    // Renumber: aggiorna id e, SOLO per label auto (R{id}), label+icona.
+    manualReceivers.forEach(function (r, i2) {
+      var newId = i2 + 1;
+      if (r.label === 'R' + r.id) {
+        r.label = 'R' + newId;
+        r.marker.setIcon(mrIcon(r.label));
+      }
+      r.id = newId;
+    });
+    renderManualReceiversList();
+    renderManualReceiversTable();
+  }
+
+  function renderManualReceiversList() {
+    var listEl = document.getElementById('manual-receivers-list');
+    var clearAllBtn = document.getElementById('btn-clear-all-manual');
+    listEl.innerHTML = '';
+    if (manualReceivers.length === 0) { clearAllBtn.style.display = 'none'; return; }
+    clearAllBtn.style.display = '';
+    manualReceivers.forEach(function (r) {
+      var row = document.createElement('div');
+      row.className = 'manual-receiver-row';
+      row.innerHTML =
+        '<input type="text" class="mr-label-input" value="' + mrEsc(r.label) + '" ' +
+        'placeholder="' + mrEsc(s.manualReceiverPlaceholder) + '" data-id="' + r.id + '" />' +
+        '<button class="mr-delete-btn" data-id="' + r.id + '" ' +
+        'title="' + mrEsc(s.manualDeleteTitle) + '">' + s.manualRBtnDelete + '</button>';
+      listEl.appendChild(row);
+    });
+    var inputs = listEl.querySelectorAll('.mr-label-input');
+    for (var ii = 0; ii < inputs.length; ii++) {
+      inputs[ii].addEventListener('input', function (ev) {
+        var id = parseInt(ev.target.dataset.id, 10);
+        var rec = null;
+        for (var k = 0; k < manualReceivers.length; k++) {
+          if (manualReceivers[k].id === id) { rec = manualReceivers[k]; break; }
+        }
+        if (!rec) return;
+        rec.label = ev.target.value || ('R' + id);
+        rec.marker.setTooltipContent(rec.IL !== undefined
+          ? rec.label + ' · IL ' + rec.IL.toFixed(1) + ' dB'
+          : rec.label + ' · ' + s.manualTableNotComputed);
+        renderManualReceiversTable();
+      });
+    }
+    var btns = listEl.querySelectorAll('.mr-delete-btn');
+    for (var bb = 0; bb < btns.length; bb++) {
+      btns[bb].addEventListener('click', function (ev) {
+        deleteManualReceiver(parseInt(ev.currentTarget.dataset.id, 10));
+      });
+    }
+  }
+
+  function renderManualReceiversTable() {
+    var wrap = document.getElementById('manual-receivers-table-wrap');
+    var tbody = document.getElementById('manual-receivers-tbody');
+    if (manualReceivers.length === 0) { wrap.style.display = 'none'; return; }
+    wrap.style.display = '';
+    var limit = (function () {
+      var v = document.getElementById('class-norm').value;
+      return v ? parseFloat(v.split(':')[1]) : null;
+    })();
+    tbody.innerHTML = '';
+    for (var i = 0; i < manualReceivers.length; i++) {
+      var r = manualReceivers[i];
+      var tr = document.createElement('tr');
+      if (r.IL !== undefined) {
+        var statusHtml;
+        if (limit !== null && isFinite(r.Leq_w)) {
+          statusHtml = r.Leq_w < limit
+            ? '<span class="status-ok">' + s.manualStatusOk + '</span>'
+            : '<span class="status-over">' + s.manualStatusOver + '</span>';
+        } else {
+          statusHtml = '<span class="status-none">' + s.manualStatusNoLimit + '</span>';
+        }
+        tr.innerHTML =
+          '<td><strong>' + mrEsc(r.label) + '</strong>' +
+          (r.diffracted ? ' <span class="diff-tag">' + s.diffractedTag + '</span>' : '') + '</td>' +
+          '<td>' + r.distSrc.toFixed(0) + ' m</td>' +
+          '<td>' + r.Leq_no.toFixed(1) + ' dBA</td>' +
+          '<td>' + (isFinite(r.Leq_w) ? r.Leq_w.toFixed(1) + ' dBA' : '—') + '</td>' +
+          '<td style="color:' + colorForIL(r.IL) + '"><strong>' + r.IL.toFixed(1) + ' dB</strong></td>' +
+          '<td>' + statusHtml + '</td>';
+      } else {
+        tr.innerHTML =
+          '<td><strong>' + mrEsc(r.label) + '</strong></td><td>—</td><td>—</td><td>—</td><td>—</td>' +
+          '<td><em>' + s.manualTableNotComputed + '</em></td>';
+      }
+      tbody.appendChild(tr);
+    }
+  }
+
+  // show-grid toggle: ridisegna live (riusa redrawIsolines).
+  document.getElementById('show-grid').addEventListener('change', function () {
+    if (lastGrid && lastGrid.length > 0) redrawIsolines(lastViewMode || 'il');
+  });
+
+  // ===== VIEW MODE + METHOD listeners =====
+  // v0.8 — view-mode cambia rerender auto (no warning, no recompute):
+  // ogni receiver porta già IL/Leq_w/Leq_no.
+  document.getElementById('view-mode').addEventListener('change', function (e) {
+    redrawIsolines(e.target.value);
   });
 
   document.querySelectorAll('input[name="method"]').forEach(function (input) {

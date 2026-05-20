@@ -1,6 +1,6 @@
 # noise-barrier-calc
 
-[![Status: v0.7](https://img.shields.io/badge/status-v0.7_working-orange.svg)](#status)
+[![Status: v0.8](https://img.shields.io/badge/status-v0.8_working-orange.svg)](#status)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Standards: ISO 9613-2 §7.4](https://img.shields.io/badge/standards-ISO_9613--2_%C2%A77.4-orange.svg)](#physics)
 
@@ -75,7 +75,7 @@ A single `index.html`. No build, no bundler, no server.
 
 ## Status
 
-**v0.7 working** — functional prototype, browser-based.
+**v0.8 working** — functional prototype, browser-based.
 
 | Version | Status | Highlights |
 |---------|--------|------------|
@@ -86,7 +86,8 @@ A single `index.html`. No build, no bundler, no server.
 | v0.5    | done   | Metric grid overlay (5m visual reference), responsive chunked calc, progress spinner |
 | v0.6    | done   | Filled contour bands at 5 dB, continuous color legend with tick marks |
 | v0.7    | done   | EN i18n + IT/EN runtime toggle, OSM buildings (Overpass) as passive obstacles, spatial scene filter + participation badge, geolocate, screenshot export, spectrum info popover; libs via CDN |
-| v0.8+   | planned | Multi-barrier cascade, lateral diffraction, source spectra from CSV |
+| v0.8    | done   | Adaptive grid (bbox + buffer), manual receivers (max 5) with results table + CSV flag, results explainer + diffracted-only stats + sublabels, auto-redraw on view-mode, defensive h=NaN fallback, OSM tooltip offset, compact multi-column panel layout |
+| v0.9+   | planned | Multi-barrier cascade, lateral diffraction, source spectra from CSV |
 
 ---
 
@@ -213,10 +214,10 @@ noise-barrier-calc/
 ├── CONTRIBUTING.md           Contributor guidelines
 ├── CHANGELOG.md              Version history
 ├── .gitignore
-├── index.html                Single-file app (v0.7)
+├── index.html                Single-file app (v0.8)
 ├── scripts/
 │   └── fetch-vendor.sh       (legacy) downloads libraries to vendor/
-├── vendor/                   (legacy) vendored libraries — v0.7 uses CDN
+├── vendor/                   (legacy) vendored libraries — v0.7+ uses CDN
 ├── examples/
 │   └── README.md             Coming: GeoJSON scenarios
 └── docs/
@@ -224,7 +225,7 @@ noise-barrier-calc/
     └── design-guide.md       UI and code conventions
 ```
 
-> Note: from v0.7 the single-file app loads libraries from CDN, so the
+> Note: from v0.7+ the single-file app loads libraries from CDN, so the
 > `vendor/` folder and `scripts/fetch-vendor.sh` are no longer required to
 > run `index.html`; they are kept for offline/air-gapped reference.
 

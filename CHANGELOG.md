@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] — 2026-05-20
+
+### Added
+- **Adaptive receiver grid** — grid bbox auto-fits source bbox + buffer per side (snapped to step). Replaces the previous fixed 300 m × 300 m square centered on the source centroid that truncated extended line/area sources.
+  - Input renamed `grid-extent` → `grid-buffer`. Default 300 → 150 (buffer per side; 150 m around a 0-size point = 300 m total = legacy behavior). Range 50–800 → 25–500. i18n key `gridExtentLabel` → `gridBufferLabel`.
+- **Manual receivers (max 5)** — new panel section "9 · Ricevitori manuali" / "9 · Manual receivers". Click-to-place with crosshair + ESC to cancel; numbered cyan square-pin markers (R1..R5) draggable; per-receiver editable label + delete + "Clear all"; auto-renumber on individual delete. Computed in the same pass as the grid (reuses worst-screen logic + `firstBarrierHit`), with a results table below the stats: Label / Source dist. / Leq w-o / Leq with / IL (colored) / Status vs limit.
+- **Results explainer** — always-visible block above the stat-boxes ("Cosa rappresentano i risultati" / "What the results represent") clarifying that IL MEAN/MAX are arithmetic over the *entire* grid (incl. front/lateral receivers with IL≈0), while LEQ WITH BARR. is the energy-averaged mean.
+- **"Diffracted only" stats** — supplementary row of 3 stat-boxes (IL mean / IL max / count) computed on `grid.filter(p => p.diffracted)`, more indicative of barrier effectiveness than the full-grid mean.
+- **Sublabels under each stat-value** (10.5 px mono, muted) explaining what each statistic is computed on.
+- **Auto-redraw on view-mode change** — switching the view-mode dropdown (IL / Leq with / Leq without) now rerenders isolines + grid points immediately without a "recompute" warning. Toggling "show grid points" also live-redraws.
+- **Defensive h=NaN fallback** — empty barrier height field no longer produces `IL = Infinity`. Falls back to `hb_total = base | 0` (= "no barrier"), calculation proceeds, warning prepended to `calc-status`. Applied to `renderCrossSection` too so the vertical cross-section doesn't draw invalid geometry.
+
+### Changed
+- **`renderIsolines` signature**: now `(grid, refLat, refLng, gridXMin, gridXMax, gridYMin, gridYMax, step, viewMode)` — rectangular Nx × Ny matrix with explicit origin (the old `(x − N/2)*step` mapping had a latent ~half-step contour-overlay misregistration that is also fixed by this).
+- **OSM building tooltip**: added explicit `offset: [0, -8]` (was `{ direction: 'top', sticky: true }` only) so it sits cleanly above the polygon.
+- **Panel layout** — multi-column packing (`column-width: 232px`) instead of a CSS grid where the row height was set by the tallest section, eliminating large empty gaps under short sections. The results section (`.span-2`) spans the full width.
+- **Stats + manual table** sit side-by-side (`bc-results-flex`, `min-width: 0`); the table stacks below only when page < 860 px.
+- **Section order** — Calcola / Reset moved after "9 · Manual receivers" so the operational flow ends add-receivers → compute.
+- **CSV export** — schema extended with `label` (first column) and `manual` (last column). Grid rows: `label=""`, `manual="false"`. Manual rows: `label=<user label, CSV-escaped>`, `manual="true"`. Existing CSV parsers from v0.7 need to handle the 2 new columns. **BREAKING** for that schema. Allows manual-only export when the grid is empty.
+- **`clearResult`** now takes `{ keepManual: true }` by default — clearing source/barrier or recomputing does NOT wipe hand-placed receivers; only "Reset tutto" passes `{ keepManual: false }`.
+
+### i18n
+- ~25 new keys in the standalone `STRINGS` dictionary (IT + EN), wired through the existing `data-i18n-text`/`data-i18n-html` attribute system: `resultsExplainerTitle/Text`, `statILMeanSub/MaxSub/LeqWithSub/BelowSub`, `statILMeanDiff/MaxDiff/NDiff` (+ subs), `hMissingWarn`, `s9Title/Helper`, `btnAddManualReceiver`, `btnClearAllManual`, `pickStatusActive`, `manualReceiverPlaceholder`, `manualMaxReached`, `manualClearConfirm`, `manualTable*`, `manualStatus*`.
+
+### Technical
+- Synced with the ST-LINE site companion component `src/components/BarrierCalculator.astro` (post-`0dbed10`). Physics engine and OSM/Overpass logic unchanged.
+- New `manual-receiver-marker` is intentionally a **square pin with pointer** (not a circle), so it doesn't visually clash with the round geolocation dot or the round grid markers.
+
+---
+
 ## [0.7.0] — 2026-05-19
 
 ### Added
