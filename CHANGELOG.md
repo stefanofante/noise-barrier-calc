@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] — 2026-05-21
+
+### Fixed
+- **Insertion Loss with OSM buildings** — the *no-barrier* scenario now includes building diffraction when buildings take part in the calculation. Previously `Leq_no` was always free-field, so `IL = Leq_no − Leq_w` conflated the barrier's effect with the buildings' shielding (receivers shadowed only by a building showed a large IL even far from the barrier). Buildings now form a common baseline for both scenarios → the IL isolates the barrier's own contribution. Without buildings in the calculation, behaviour is unchanged. Applied to both the grid loop and the manual-receiver pass.
+
+### Technical
+- Synced from the ST-LINE site companion component `BarrierCalculator.astro`. Physics engine otherwise unchanged.
+
+---
+
 ## [0.8.0] — 2026-05-20
 
 ### Added

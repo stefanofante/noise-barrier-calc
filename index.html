@@ -2870,24 +2870,11 @@ function initBarrierCalc() {
             var dist = Math.sqrt(ddx * ddx + ddy * ddy);
             if (dist < 1) continue;
 
-            var Leq_no_pt = propagatePoint({ Lw: LwPerPoint, spectrum: spectrum, dist: dist, hs: hs, hr: hr, T: T, RH: RH, G: G, diffDelta: 0, method: diffMethod });
-            energyNoB += Math.pow(10, Leq_no_pt / 10);
-
-            var diffDelta = 0;
-            var d_sb_iso = 0, d_sr_iso = 0;
-            if (barrierLocal) {
-              var hit = firstBarrierHit(sx, sy, rx, ry, barrierLocal);
-              if (hit) {
-                var d_sb = Math.sqrt(Math.pow(hit.x - sx, 2) + Math.pow(hit.y - sy, 2));
-                var d_br = Math.sqrt(Math.pow(rx - hit.x, 2) + Math.pow(ry - hit.y, 2));
-                diffDelta = pathDelta(d_sb, d_br, hs, hr, hb_total);
-                if (diffDelta > 0) {
-                  receiverDiffracted = true;
-                  d_sb_iso = d_sb;
-                  d_sr_iso = dist;
-                }
-              }
-            }
+            // v0.9 — worst-screen sui soli EDIFICI: baseline comune ai
+            // due scenari. Gli edifici (se nel calcolo) ci sono SIA
+            // senza SIA con barriera → l'IL isola il solo effetto
+            // della barriera, non lo schermaggio barriera + edifici.
+            var diffBld = 0, d_sb_bld = 0, d_sr_bld = 0, usedBld = false;
             if (buildingsLocal) {
               for (var bli = 0; bli < buildingsLocal.length; bli++) {
                 var bl = buildingsLocal[bli];
@@ -2896,15 +2883,27 @@ function initBarrierCalc() {
                 var d_sb_b = Math.sqrt(Math.pow(bhit.x - sx, 2) + Math.pow(bhit.y - sy, 2));
                 var d_br_b = Math.sqrt(Math.pow(rx - bhit.x, 2) + Math.pow(ry - bhit.y, 2));
                 var dd = pathDelta(d_sb_b, d_br_b, hs, hr, bl.height);
-                if (dd > diffDelta) {
-                  diffDelta = dd;
-                  receiverDiffracted = true;
-                  recUsedBuilding = true;
-                  d_sb_iso = d_sb_b;
-                  d_sr_iso = dist;
-                  nPairBuilding++;
-                }
+                if (dd > diffBld) { diffBld = dd; d_sb_bld = d_sb_b; d_sr_bld = dist; usedBld = true; }
               }
+            }
+            var Leq_no_pt = propagatePoint({ Lw: LwPerPoint, spectrum: spectrum, dist: dist, hs: hs, hr: hr, T: T, RH: RH, G: G, diffDelta: diffBld, method: diffMethod, d_ss: d_sb_bld, d_sr: d_sr_bld });
+            energyNoB += Math.pow(10, Leq_no_pt / 10);
+
+            var diffBar = 0, d_sb_bar = 0, d_sr_bar = 0;
+            if (barrierLocal) {
+              var hit = firstBarrierHit(sx, sy, rx, ry, barrierLocal);
+              if (hit) {
+                var d_sb = Math.sqrt(Math.pow(hit.x - sx, 2) + Math.pow(hit.y - sy, 2));
+                var d_br = Math.sqrt(Math.pow(rx - hit.x, 2) + Math.pow(ry - hit.y, 2));
+                diffBar = pathDelta(d_sb, d_br, hs, hr, hb_total);
+                d_sb_bar = d_sb; d_sr_bar = dist;
+              }
+            }
+            var diffDelta = diffBld, d_sb_iso = d_sb_bld, d_sr_iso = d_sr_bld;
+            if (diffBar > diffBld) { diffDelta = diffBar; d_sb_iso = d_sb_bar; d_sr_iso = d_sr_bar; }
+            if (diffDelta > 0) {
+              receiverDiffracted = true;
+              if (usedBld && diffBld >= diffBar) { recUsedBuilding = true; nPairBuilding++; }
             }
             var Leq_w_pt = propagatePoint({ Lw: LwPerPoint, spectrum: spectrum, dist: dist, hs: hs, hr: hr, T: T, RH: RH, G: G, diffDelta: diffDelta, method: diffMethod, d_ss: d_sb_iso, d_sr: d_sr_iso });
             energyWithB += Math.pow(10, Leq_w_pt / 10);
@@ -2944,18 +2943,9 @@ function initBarrierCalc() {
               var msx = sourcePoints[mspi][0], msy = sourcePoints[mspi][1];
               var mdist = Math.sqrt((mrx - msx) * (mrx - msx) + (mry - msy) * (mry - msy));
               if (mdist < 1) continue;
-              var mLn = propagatePoint({ Lw: LwPerPoint, spectrum: spectrum, dist: mdist, hs: hs, hr: hr, T: T, RH: RH, G: G, diffDelta: 0, method: diffMethod });
-              mEnergyNoB += Math.pow(10, mLn / 10);
-              var mDelta = 0, mDsb = 0, mDsr = 0;
-              if (barrierLocal) {
-                var mhit = firstBarrierHit(msx, msy, mrx, mry, barrierLocal);
-                if (mhit) {
-                  var mdsb = Math.sqrt(Math.pow(mhit.x - msx, 2) + Math.pow(mhit.y - msy, 2));
-                  var mdbr = Math.sqrt(Math.pow(mrx - mhit.x, 2) + Math.pow(mry - mhit.y, 2));
-                  mDelta = pathDelta(mdsb, mdbr, hs, hr, hb_total);
-                  if (mDelta > 0) { mDiff = true; mDsb = mdsb; mDsr = mdist; }
-                }
-              }
+              // v0.9 — stessa logica del loop griglia: edifici come
+              // baseline comune, l'IL isola la sola barriera.
+              var mDiffBld = 0, mDsbBld = 0, mDsrBld = 0;
               if (buildingsLocal) {
                 for (var mbli = 0; mbli < buildingsLocal.length; mbli++) {
                   var mbl = buildingsLocal[mbli];
@@ -2964,9 +2954,24 @@ function initBarrierCalc() {
                   var mdsbb = Math.sqrt(Math.pow(mbhit.x - msx, 2) + Math.pow(mbhit.y - msy, 2));
                   var mdbrb = Math.sqrt(Math.pow(mrx - mbhit.x, 2) + Math.pow(mry - mbhit.y, 2));
                   var mdd = pathDelta(mdsbb, mdbrb, hs, hr, mbl.height);
-                  if (mdd > mDelta) { mDelta = mdd; mDiff = true; mDsb = mdsbb; mDsr = mdist; }
+                  if (mdd > mDiffBld) { mDiffBld = mdd; mDsbBld = mdsbb; mDsrBld = mdist; }
                 }
               }
+              var mLn = propagatePoint({ Lw: LwPerPoint, spectrum: spectrum, dist: mdist, hs: hs, hr: hr, T: T, RH: RH, G: G, diffDelta: mDiffBld, method: diffMethod, d_ss: mDsbBld, d_sr: mDsrBld });
+              mEnergyNoB += Math.pow(10, mLn / 10);
+              var mDiffBar = 0, mDsbBar = 0, mDsrBar = 0;
+              if (barrierLocal) {
+                var mhit = firstBarrierHit(msx, msy, mrx, mry, barrierLocal);
+                if (mhit) {
+                  var mdsb = Math.sqrt(Math.pow(mhit.x - msx, 2) + Math.pow(mhit.y - msy, 2));
+                  var mdbr = Math.sqrt(Math.pow(mrx - mhit.x, 2) + Math.pow(mry - mhit.y, 2));
+                  mDiffBar = pathDelta(mdsb, mdbr, hs, hr, hb_total);
+                  mDsbBar = mdsb; mDsrBar = mdist;
+                }
+              }
+              var mDelta = mDiffBld, mDsb = mDsbBld, mDsr = mDsrBld;
+              if (mDiffBar > mDiffBld) { mDelta = mDiffBar; mDsb = mDsbBar; mDsr = mDsrBar; }
+              if (mDelta > 0) mDiff = true;
               var mLw = propagatePoint({ Lw: LwPerPoint, spectrum: spectrum, dist: mdist, hs: hs, hr: hr, T: T, RH: RH, G: G, diffDelta: mDelta, method: diffMethod, d_ss: mDsb, d_sr: mDsr });
               mEnergyWithB += Math.pow(10, mLw / 10);
             }
