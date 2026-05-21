@@ -10,6 +10,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Fixed
 - **Insertion Loss with OSM buildings** — the *no-barrier* scenario now includes building diffraction when buildings take part in the calculation. Previously `Leq_no` was always free-field, so `IL = Leq_no − Leq_w` conflated the barrier's effect with the buildings' shielding (receivers shadowed only by a building showed a large IL even far from the barrier). Buildings now form a common baseline for both scenarios → the IL isolates the barrier's own contribution. Without buildings in the calculation, behaviour is unchanged. Applied to both the grid loop and the manual-receiver pass.
 
+### Changed
+- **Repository layout: multi-file static site.** The single-file `index.html` has been split into an HTML shell plus 12 vanilla-JS modules under `js/` (`physics/{constants,spectra,atm,ground,diffraction,geometry,propagation}.js`, `osm/buildings.js`, `ui/screenshot.js`, `i18n/{strings,runtime}.js`, `app.js`). Physics, OSM logic and DOM behaviour are byte-equivalent to v0.8.1 single-file; only the file boundaries changed. **Running the site now requires a static HTTP server** (`python -m http.server 8000`, `npx serve .`, `php -S localhost:8000`); browsers refuse to execute `<script src="js/...">` from a `file://` URL.
+- **English-only UI.** The IT/EN runtime toggle and the Italian branch of the `STRINGS` dictionary have been removed. `<html lang>` is now `en`, page title and meta description are English, and the `#lang-toggle` button is gone. The `data-i18n-text` / `data-i18n-html` binding system is kept (DOM still gets filled from `STRINGS.en` at boot) so `app.js` can keep its `s.someKey` lookups unchanged.
+
 ### Technical
 - Synced from the ST-LINE site companion component `BarrierCalculator.astro`. Physics engine otherwise unchanged.
 

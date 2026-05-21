@@ -4,8 +4,7 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Standards: ISO 9613-2 §7.4](https://img.shields.io/badge/standards-ISO_9613--2_%C2%A77.4-orange.svg)](#physics)
 
-> **IT** — Calcolatore di Insertion Loss di barriere acustiche, single-file, in browser.
-> **EN** — Single-file, browser-based acoustic-barrier insertion-loss calculator.
+> **EN** — Browser-based acoustic-barrier insertion-loss calculator.
 
 Place a source (point, line or area), draw a barrier on the map, optionally
 download OSM buildings as passive obstacles, and the tool computes how much
@@ -15,7 +14,9 @@ Demonstration tool for **environmental acoustics**, runs entirely in the
 browser. Companion to [acmap](https://github.com/stefanofante/acmap)
 (acoustic mapping), sharing the same physics engine.
 
-A single `index.html`. No build, no bundler, no server.
+Vanilla JavaScript split across a small set of files under `js/`. No build,
+no bundler. A static web server is required (browsers refuse to load
+`<script src>` from `file://` and CORS blocks tile/Overpass requests).
 
 ---
 
@@ -30,8 +31,6 @@ A single `index.html`. No build, no bundler, no server.
   (worst-screen-wins: one obstacle per source–receiver pair)
 - ✅ **Spatial scene filter** — only buildings inside the scene bbox
   (source ∪ barrier ∪ receiver-grid + 10 m buffer) participate; "X of Y" badge
-- ✅ **IT / EN UI toggle** — full runtime string dictionary (117+ keys per language),
-  persisted to `localStorage`
 - ✅ **Filled IL contour bands** at 5 dB (default), isolines at 5 dB, receiver points,
   zoom-adaptive metric grid (5–25 m)
 - ✅ **Vertical cross-section** — click any receiver for source→barrier→receiver
@@ -50,7 +49,23 @@ A single `index.html`. No build, no bundler, no server.
 
 ## Quick start
 
-**Open `index.html` in a modern browser. No build, no server.**
+The site ships as plain HTML + a few JS files. Browsers will not execute
+`<script src="js/...">` from a `file://` URL, and OSM tiles / Overpass
+requests are blocked by CORS in that mode. **Serve the folder over HTTP** —
+any static server works:
+
+```sh
+# Python 3 (most systems already have it)
+python -m http.server 8000
+
+# Node.js
+npx serve .
+
+# PHP
+php -S localhost:8000
+```
+
+Then open <http://localhost:8000/> in a modern browser.
 
 > First load needs internet access: the page pulls Leaflet, d3-contour and
 > (lazily) html2canvas from CDN, the OpenStreetMap tiles, and — only when you
@@ -189,9 +204,9 @@ Leq_A = 10·log10(Σ_points Σ_bands 10^((Lp_band + A_weight)/10))
 
 ## Tech stack
 
-- **Vanilla JavaScript** (ES2020+), no bundler, no build pipeline
-- **Single-file HTML** (`index.html`) — physics/OSM/screenshot logic inlined
-  verbatim from the ST-LINE site shared modules
+- **Vanilla JavaScript** (ES5-friendly), no bundler, no build pipeline
+- **Multi-file static site** (`index.html` + `js/**`) — served by any static HTTP
+  server; physics/OSM/screenshot logic split into small modules under `js/`
 - Libraries via CDN (true single-file standalone):
   - [Leaflet 1.9.4](https://leafletjs.com) — BSD 2-Clause
   - [d3-contour 4.0.2](https://github.com/d3/d3-contour) — ISC
@@ -214,7 +229,14 @@ noise-barrier-calc/
 ├── CONTRIBUTING.md           Contributor guidelines
 ├── CHANGELOG.md              Version history
 ├── .gitignore
-├── index.html                Single-file app (v0.8)
+├── index.html                HTML shell, loads the JS modules below
+├── js/
+│   ├── physics/              Constants, spectra, atmosphere, ground,
+│   │                         diffraction, geometry, propagation
+│   ├── osm/                  Overpass fetch + footprint parsing
+│   ├── ui/                   Screenshot control
+│   ├── i18n/                 English string table + DOM binding runtime
+│   └── app.js                Map, drawing, calculation, results UI
 ├── scripts/
 │   └── fetch-vendor.sh       (legacy) downloads libraries to vendor/
 ├── vendor/                   (legacy) vendored libraries — v0.7+ uses CDN
@@ -225,9 +247,9 @@ noise-barrier-calc/
     └── design-guide.md       UI and code conventions
 ```
 
-> Note: from v0.7+ the single-file app loads libraries from CDN, so the
-> `vendor/` folder and `scripts/fetch-vendor.sh` are no longer required to
-> run `index.html`; they are kept for offline/air-gapped reference.
+> Note: from v0.7+ the app loads libraries from CDN, so the `vendor/`
+> folder and `scripts/fetch-vendor.sh` are no longer required to run the
+> site; they are kept for offline/air-gapped reference.
 
 ---
 
