@@ -164,6 +164,9 @@ var STRINGS = {
     bldInCalc: 'Buildings in calc:', recDominantBld: 'rec. with dominant building',
     bldLoading: '⏳ Downloading OSM buildings…',
     bldNone: '○ No buildings found in this area',
+    // Total download failure: must be told apart from "no buildings here",
+    // otherwise an unreachable OSM looks like an area with nothing built.
+    bldOffline: '⚠ Buildings NOT downloaded: OpenStreetMap unreachable. Retry, or compute with no obstacles.',
     bldErr: '⚠ Overpass error: ', bldWithOsm: 'with OSM height',
     bldEstimated: 'estimated', bldEstTag: '(estimated)', bldWord: 'buildings',
     bldInCalcFull: 'buildings in calc',

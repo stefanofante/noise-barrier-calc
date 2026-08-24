@@ -313,7 +313,7 @@ function initBarrierCalc() {
     var borderColor = isDark ? '#2a2d33' : '#5e5e5a';
     buildings.forEach(function (b) {
       if (!b.polygonLatLng) return;
-      var isEstimated = b.heightSource === 'default';
+      var isEstimated = b.height_estimated;
       var t = Math.max(0, Math.min(1, (b.height - 3) / 27));
       var fillColor = isDark
         ? 'rgba(108,208,255,' + (0.10 + 0.22 * t).toFixed(3) + ')'
@@ -340,18 +340,26 @@ function initBarrierCalc() {
     var btn = document.getElementById('btn-load-buildings');
     btn.disabled = true;
     statusEl.textContent = s.bldLoading;
-    return fetchOSMBuildings({
+    // fetchOSMBuildingsResult and not the historic signature: we need the
+    // `offline` flag, otherwise a total mirror failure is indistinguishable
+    // from "there are no buildings here".
+    return fetchOSMBuildingsResult({
       center: { lat: cLat, lng: cLng },
       radius: radius,
       refLat: cLat, refLng: cLng,
       defaultHeight: defaultHeight,
     }).then(function (result) {
-      buildings = result;
-      var est = buildings.filter(function (b) { return b.heightSource === 'default'; }).length;
+      buildings = result.buildings;
+      // `height_estimated` is the single source of judgement: false ONLY with
+      // an explicit height tag. Counting 'levels' as real height claimed more
+      // measured data than there was — levels x storey height is an estimate.
+      var est = buildings.filter(function (b) { return b.height_estimated; }).length;
       var meas = buildings.length - est;
-      statusEl.textContent = buildings.length
-        ? '✓ ' + buildings.length + ' ' + s.bldWord + ' · ' + meas + ' ' + s.bldWithOsm + ' · ' + est + ' ' + s.bldEstimated + ' (' + defaultHeight + 'm)'
-        : s.bldNone;
+      statusEl.textContent = result.offline
+        ? s.bldOffline
+        : (buildings.length
+          ? '✓ ' + buildings.length + ' ' + s.bldWord + ' · ' + meas + ' ' + s.bldWithOsm + ' · ' + est + ' ' + s.bldEstimated + ' (' + defaultHeight + 'm)'
+          : s.bldNone);
       if (buildings.length > 0) {
         var showCheckbox = document.getElementById('show-buildings');
         if (showCheckbox && !showCheckbox.checked) {
@@ -940,7 +948,7 @@ function initBarrierCalc() {
             var Leq_no_pt = propagatePoint({ Lw: LwPerPoint, spectrum: spectrum, dist: dist, hs: hs, hr: hr, T: T, RH: RH, G: G, diffDelta: diffBld, method: diffMethod, d_ss: d_sb_bld, d_sr: d_sr_bld });
             energyNoB += Math.pow(10, Leq_no_pt / 10);
 
-            var diffBar = 0, d_sb_bar = 0, d_sr_bar = 0;
+            var diffBar = 0, d_sb_bar = 0, d_sr_bar = 0, barPerpTop = 0;
             if (barrierLocal) {
               var hit = firstBarrierHit(sx, sy, rx, ry, barrierLocal);
               if (hit) {
@@ -948,6 +956,11 @@ function initBarrierCalc() {
                 var d_br = Math.sqrt(Math.pow(rx - hit.x, 2) + Math.pow(ry - hit.y, 2));
                 diffBar = pathDelta(d_sb, d_br, hs, hr, hb_total);
                 d_sb_bar = d_sb; d_sr_bar = dist;
+                // Height of the source-receiver line where it crosses the
+                // barrier: how far the top edge sticks out above the line is
+                // what makes a lateral path comparable to the top one.
+                var yLos = hs + (d_sb / (d_sb + d_br)) * (hr - hs);
+                barPerpTop = hb_total - yLos;
               }
             }
             var diffDelta = diffBld, d_sb_iso = d_sb_bld, d_sr_iso = d_sr_bld;
@@ -956,7 +969,19 @@ function initBarrierCalc() {
               receiverDiffracted = true;
               if (usedBld && diffBld >= diffBar) { recUsedBuilding = true; nPairBuilding++; }
             }
-            var Leq_w_pt = propagatePoint({ Lw: LwPerPoint, spectrum: spectrum, dist: dist, hs: hs, hr: hr, T: T, RH: RH, G: G, diffDelta: diffDelta, method: diffMethod, d_ss: d_sb_iso, d_sr: d_sr_iso });
+            // Lateral diffraction, ISO 9613-2:2024 section 7.4.3 - the paths
+            // that go around the two vertical edges of the barrier. Only
+            // meaningful when the barrier is the dominant screen: if a
+            // building shields more than the barrier does, the geometry of
+            // the barrier edges no longer describes the governing path.
+            // Combined with the top path per section 7.4.4 (formula 25)
+            // inside propagatePoint. Ignored by the 1996 and Maekawa methods.
+            var latZ1 = 0, latZ2 = 0;
+            if (barrierLocal && diffBar > 0 && diffDelta === diffBar) {
+              var lat = lateralBarrierDeltas(sx, sy, rx, ry, hs, hr, barrierLocal, barPerpTop);
+              latZ1 = lat[0]; latZ2 = lat[1];
+            }
+            var Leq_w_pt = propagatePoint({ Lw: LwPerPoint, spectrum: spectrum, dist: dist, hs: hs, hr: hr, T: T, RH: RH, G: G, diffDelta: diffDelta, method: diffMethod, d_ss: d_sb_iso, d_sr: d_sr_iso, latZ1: latZ1, latZ2: latZ2 });
             energyWithB += Math.pow(10, Leq_w_pt / 10);
           }
           if (energyNoB <= 0) continue;
@@ -1010,7 +1035,7 @@ function initBarrierCalc() {
               }
               var mLn = propagatePoint({ Lw: LwPerPoint, spectrum: spectrum, dist: mdist, hs: hs, hr: hr, T: T, RH: RH, G: G, diffDelta: mDiffBld, method: diffMethod, d_ss: mDsbBld, d_sr: mDsrBld });
               mEnergyNoB += Math.pow(10, mLn / 10);
-              var mDiffBar = 0, mDsbBar = 0, mDsrBar = 0;
+              var mDiffBar = 0, mDsbBar = 0, mDsrBar = 0, mPerpTop = 0;
               if (barrierLocal) {
                 var mhit = firstBarrierHit(msx, msy, mrx, mry, barrierLocal);
                 if (mhit) {
@@ -1018,12 +1043,22 @@ function initBarrierCalc() {
                   var mdbr = Math.sqrt(Math.pow(mrx - mhit.x, 2) + Math.pow(mry - mhit.y, 2));
                   mDiffBar = pathDelta(mdsb, mdbr, hs, hr, hb_total);
                   mDsbBar = mdsb; mDsrBar = mdist;
+                  var mYLos = hs + (mdsb / (mdsb + mdbr)) * (hr - hs);
+                  mPerpTop = hb_total - mYLos;
                 }
               }
               var mDelta = mDiffBld, mDsb = mDsbBld, mDsr = mDsrBld;
               if (mDiffBar > mDiffBld) { mDelta = mDiffBar; mDsb = mDsbBar; mDsr = mDsrBar; }
               if (mDelta > 0) mDiff = true;
-              var mLw = propagatePoint({ Lw: LwPerPoint, spectrum: spectrum, dist: mdist, hs: hs, hr: hr, T: T, RH: RH, G: G, diffDelta: mDelta, method: diffMethod, d_ss: mDsb, d_sr: mDsr });
+              // Same lateral path as the grid loop: the two passes must stay
+              // aligned, otherwise a manual receiver and the grid cell it sits
+              // in report different levels.
+              var mLatZ1 = 0, mLatZ2 = 0;
+              if (barrierLocal && mDiffBar > 0 && mDelta === mDiffBar) {
+                var mLat = lateralBarrierDeltas(msx, msy, mrx, mry, hs, hr, barrierLocal, mPerpTop);
+                mLatZ1 = mLat[0]; mLatZ2 = mLat[1];
+              }
+              var mLw = propagatePoint({ Lw: LwPerPoint, spectrum: spectrum, dist: mdist, hs: hs, hr: hr, T: T, RH: RH, G: G, diffDelta: mDelta, method: diffMethod, d_ss: mDsb, d_sr: mDsr, latZ1: mLatZ1, latZ2: mLatZ2 });
               mEnergyWithB += Math.pow(10, mLw / 10);
             }
             r.Leq_no = 10 * Math.log10(mEnergyNoB);

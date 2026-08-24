@@ -1,6 +1,6 @@
 # noise-barrier-calc
 
-[![Status: v0.8](https://img.shields.io/badge/status-v0.8_working-orange.svg)](#status)
+[![Status: v0.9.2](https://img.shields.io/badge/status-v0.9.2_working-orange.svg)](#status)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Standards: ISO 9613-2 §7.4](https://img.shields.io/badge/standards-ISO_9613--2_%C2%A77.4-orange.svg)](#physics)
 
@@ -90,7 +90,7 @@ Then open <http://localhost:8000/> in a modern browser.
 
 ## Status
 
-**v0.8 working** — functional prototype, browser-based.
+**v0.9.2 working** — functional prototype, browser-based.
 
 | Version | Status | Highlights |
 |---------|--------|------------|
@@ -102,6 +102,7 @@ Then open <http://localhost:8000/> in a modern browser.
 | v0.6    | done   | Filled contour bands at 5 dB, continuous color legend with tick marks |
 | v0.7    | done   | EN i18n + IT/EN runtime toggle, OSM buildings (Overpass) as passive obstacles, spatial scene filter + participation badge, geolocate, screenshot export, spectrum info popover; libs via CDN |
 | v0.8    | done   | Adaptive grid (bbox + buffer), manual receivers (max 5) with results table + CSV flag, results explainer + diffracted-only stats + sublabels, auto-redraw on view-mode, defensive h=NaN fallback, OSM tooltip offset, compact multi-column panel layout |
+| v0.9.2  | done   | ISO 9613-2:2024 diffraction as default, lateral diffraction (§7.4.3) combined per §7.4.4 (1996 selectable), engine generated from the site TypeScript + numerical regression guard, OSM multipolygon buildings recovered, extended height chain with per-typology defaults, Overpass mirror chain with staggered requests + response cache, explicit offline state |
 | v0.9+   | planned | Multi-barrier cascade, lateral diffraction, source spectra from CSV |
 
 ---
@@ -149,14 +150,17 @@ Standard outdoor sound propagation model. For each source point → receiver pai
 ### Diffraction formulas (selectable)
 
 **Maekawa (1968)** — original formula, infinite barrier assumed:
+
 ```
 A_dif = 10·log10(3 + 20·N)
 N = 2·δ/λ                 (Fresnel number)
 δ = (d_st + d_tr) - d_sr  (path difference, meters)
 ```
+
 Max attenuation: 25 dB.
 
 **ISO 9613-2:1996 §7.4** — full screening formula (default):
+
 ```
 Dz = 10·log10(3 + (C2/λ)·C3·z·Kmet)
 
@@ -165,6 +169,7 @@ C3 = 1                      (single barrier; ≠1 for double — not implemented
 z = δ                       (path difference)
 Kmet = exp(-(1/2000)·√(d_ss·d_sr/(2z)))   (downwind meteorological correction)
 ```
+
 Max attenuation: 20 dB (single barrier).
 
 The standard formula (C2=20) is consistently 1–3 dB more conservative than

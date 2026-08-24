@@ -1,1164 +1,2287 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Noise barrier calculator · noise-barrier-calc — ST-LINE Open Lab</title>
-<meta name="description" content="Demonstrative tool: verify the effectiveness of a noise barrier with ISO 9613-2 §7.4 / Maekawa. Line/area/point source, in-browser Insertion Loss computation.">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<style>
-/* ===== Design tokens (da barriers-proto-v06 / tokens.css) ===== */
-:root, [data-theme='light'] {
-  --bg: #ECECEA; --bg-alt: #E2E2DF; --surface: #ffffff;
-  --line: #C8C8C4; --line-2: #cccccc;
-  --ink: #15171a; --ink-2: #44474b; --muted: #767a7e;
-  --accent: #91A82E; --accent-2: #B5D32C; --accent-glow: rgba(145,168,46,.12);
-  --area-hw: #91A82E; --area-sw: #2891C7; --area-ac: #B07A2A;
-  --area-hw-glow: rgba(145,168,46,.14); --area-sw-glow: rgba(40,145,199,.14); --area-ac-glow: rgba(176,122,42,.14);
-  --info: #2076a8; --warn: #9a5e12; --danger: #c5341f; --danger-bg: rgba(197,52,31,.10);
-  --shadow-card: 0 2px 6px rgba(0,0,0,.04), 0 8px 20px rgba(0,0,0,.04);
-  --maxw: 1280px; --maxw-prose: 920px; --radius: 3px;
-  --f-display: 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
-  --f-sans: 'Inter Tight', -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --f-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, Monaco, monospace;
-}
-[data-theme='dark'] {
-  --bg: #16181C; --bg-alt: #1E2025; --surface: #1c1d20;
-  --line: #2A2D33; --line-2: #3a3d42;
-  --ink: #e9e6df; --ink-2: #b6b3ac; --muted: #7a7d80;
-  --accent: #92AD21; --accent-2: #c8e055; --accent-glow: rgba(146,173,33,.35);
-  --area-hw: #B5D32C; --area-sw: #6CD0FF; --area-ac: #E0A95D;
-  --area-hw-glow: rgba(181,211,44,.18); --area-sw-glow: rgba(108,208,255,.18); --area-ac-glow: rgba(224,169,93,.18);
-  --info: #6CD0FF; --warn: #f1a154; --danger: #ef6b62; --danger-bg: rgba(239,107,98,.14);
-  --shadow-card: none;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]), :root[data-theme=''] {
-    --bg: #16181C; --bg-alt: #1E2025; --surface: #1c1d20;
-    --line: #2A2D33; --line-2: #3a3d42;
-    --ink: #e9e6df; --ink-2: #b6b3ac; --muted: #7a7d80;
-    --accent: #92AD21; --accent-2: #c8e055; --accent-glow: rgba(146,173,33,.35);
-    --area-hw: #B5D32C; --area-sw: #6CD0FF; --area-ac: #E0A95D;
-    --area-ac-glow: rgba(224,169,93,.18);
-    --info: #6CD0FF; --warn: #f1a154; --danger: #ef6b62; --danger-bg: rgba(239,107,98,.14);
-    --shadow-card: none;
-  }
-}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Noise barrier calculator · noise-barrier-calc — ST-LINE Open Lab</title>
+  <meta name="description"
+    content="Demonstrative tool: verify the effectiveness of a noise barrier with ISO 9613-2 §7.4 / Maekawa. Line/area/point source, in-browser Insertion Loss computation.">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    /* ===== Design tokens (da barriers-proto-v06 / tokens.css) ===== */
+    :root,
+    [data-theme='light'] {
+      --bg: #ECECEA;
+      --bg-alt: #E2E2DF;
+      --surface: #ffffff;
+      --line: #C8C8C4;
+      --line-2: #cccccc;
+      --ink: #15171a;
+      --ink-2: #44474b;
+      --muted: #767a7e;
+      --accent: #91A82E;
+      --accent-2: #B5D32C;
+      --accent-glow: rgba(145, 168, 46, .12);
+      --area-hw: #91A82E;
+      --area-sw: #2891C7;
+      --area-ac: #B07A2A;
+      --area-hw-glow: rgba(145, 168, 46, .14);
+      --area-sw-glow: rgba(40, 145, 199, .14);
+      --area-ac-glow: rgba(176, 122, 42, .14);
+      --info: #2076a8;
+      --warn: #9a5e12;
+      --danger: #c5341f;
+      --danger-bg: rgba(197, 52, 31, .10);
+      --shadow-card: 0 2px 6px rgba(0, 0, 0, .04), 0 8px 20px rgba(0, 0, 0, .04);
+      --maxw: 1280px;
+      --maxw-prose: 920px;
+      --radius: 3px;
+      --f-display: 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
+      --f-sans: 'Inter Tight', -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --f-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, Monaco, monospace;
+    }
 
-/* ===== Base reset / typography (da barriers-proto-v06) ===== */
-* { box-sizing: border-box; }
-body {
-  margin: 0; background: var(--bg); color: var(--ink);
-  font-family: var(--f-sans); font-size: 15px; line-height: 1.6;
-}
-.container, .frame {
-  max-width: var(--maxw); margin: 0 auto;
-  padding: 0 clamp(20px, 4vw, 48px);
-}
+    [data-theme='dark'] {
+      --bg: #16181C;
+      --bg-alt: #1E2025;
+      --surface: #1c1d20;
+      --line: #2A2D33;
+      --line-2: #3a3d42;
+      --ink: #e9e6df;
+      --ink-2: #b6b3ac;
+      --muted: #7a7d80;
+      --accent: #92AD21;
+      --accent-2: #c8e055;
+      --accent-glow: rgba(146, 173, 33, .35);
+      --area-hw: #B5D32C;
+      --area-sw: #6CD0FF;
+      --area-ac: #E0A95D;
+      --area-hw-glow: rgba(181, 211, 44, .18);
+      --area-sw-glow: rgba(108, 208, 255, .18);
+      --area-ac-glow: rgba(224, 169, 93, .18);
+      --info: #6CD0FF;
+      --warn: #f1a154;
+      --danger: #ef6b62;
+      --danger-bg: rgba(239, 107, 98, .14);
+      --shadow-card: none;
+    }
 
-/* ===== Header standalone minimale ===== */
-.header-mock {
-  background: var(--surface); border-bottom: 1px solid var(--line);
-  padding: 14px 0; font-family: var(--f-mono); font-size: 12px; color: var(--ink-2);
-}
-.header-mock-inner { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
-.header-mock .breadcrumb a { color: var(--ink-2); text-decoration: none; }
-.header-mock .breadcrumb a:hover { color: var(--area-ac); }
-.header-mock .breadcrumb .sep { color: var(--line-2); margin: 0 8px; }
-.header-actions { display: flex; gap: 8px; }
-.theme-toggle, .lang-toggle {
-  background: transparent; border: 1px solid var(--line);
-  color: var(--ink-2); padding: 4px 10px; border-radius: 4px;
-  font-family: var(--f-mono); font-size: 11px; cursor: pointer;
-}
-.theme-toggle:hover, .lang-toggle:hover { color: var(--ink); border-color: var(--ink-2); }
+    @media (prefers-color-scheme: dark) {
 
-/* ===== Eyebrow dot (da global.css) ===== */
-.eyebrow .dot { animation: pulse 2.4s ease-in-out infinite; }
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+      :root:not([data-theme]),
+      :root[data-theme=''] {
+        --bg: #16181C;
+        --bg-alt: #1E2025;
+        --surface: #1c1d20;
+        --line: #2A2D33;
+        --line-2: #3a3d42;
+        --ink: #e9e6df;
+        --ink-2: #b6b3ac;
+        --muted: #7a7d80;
+        --accent: #92AD21;
+        --accent-2: #c8e055;
+        --accent-glow: rgba(146, 173, 33, .35);
+        --area-hw: #B5D32C;
+        --area-sw: #6CD0FF;
+        --area-ac: #E0A95D;
+        --area-ac-glow: rgba(224, 169, 93, .18);
+        --info: #6CD0FF;
+        --warn: #f1a154;
+        --danger: #ef6b62;
+        --danger-bg: rgba(239, 107, 98, .14);
+        --shadow-card: none;
+      }
+    }
 
-/* ===== Hero + tag (component scoped, :global stripped) ===== */
-.bc-top{ padding-top: clamp(18px, 3vw, 28px); }
-.bc-breadcrumb{
-  font-family: var(--f-mono); font-size: 12px; color: var(--ink-2);
-  display: flex; align-items: center; gap: 0;
-}
-.bc-breadcrumb a{ color: var(--ink-2); text-decoration: none; }
-.bc-breadcrumb a:hover{ color: var(--area-ac); }
-.bc-breadcrumb .sep{ color: var(--line-2); margin: 0 8px; }
-.bc-hero{
-  padding: clamp(28px, 5vw, 52px) 0 clamp(20px, 3vw, 36px);
-  border-bottom: 1px solid var(--line);
-}
-.bc-eyebrow{
-  font-family: var(--f-mono); font-size: 12px; color: var(--area-ac);
-  letter-spacing: 0.06em; text-transform: uppercase;
-  margin: 0 0 14px; display: flex; align-items: center; gap: 8px;
-}
-.bc-eyebrow .dot{
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--area-ac); box-shadow: 0 0 6px var(--area-ac);
-}
-.bc-h1{
-  font-size: clamp(28px, 4vw, 44px); line-height: 1.1; font-weight: 600;
-  margin: 0 0 12px; letter-spacing: -0.02em;
-}
-.bc-h1 em{ color: var(--area-ac); font-style: normal; }
-.hero-sub{ color: var(--ink-2); font-size: clamp(15px, 1.4vw, 17px); margin: 0 0 20px; max-width: 70ch; }
-.hero-meta{ display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
-.tag{
-  font-family: var(--f-mono); font-size: 11px; padding: 4px 9px;
-  border: 1px solid var(--line); border-radius: 3px; color: var(--ink-2);
-  letter-spacing: 0.04em; text-transform: uppercase;
-}
-.tag.beta{ color: var(--area-ac); border-color: var(--area-ac); }
+    /* ===== Base reset / typography (da barriers-proto-v06) ===== */
+    * {
+      box-sizing: border-box;
+    }
 
-/* ===== Tool shell condiviso (da global.css — layout FLUID) ===== */
-.tool-layout {
-  display: flex; flex-direction: column; gap: 0;
-  margin: 24px 0 40px; border: 1px solid var(--line);
-  border-radius: 10px; overflow: hidden; background: var(--surface);
-}
-.tool-map {
-  width: 100%; height: 62vh; min-height: 420px; max-height: 820px;
-  flex-shrink: 0; position: relative; background: var(--bg-alt);
-}
-.tool-map #map { width: 100%; height: 100%; }
-.tool-panel {
-  width: 100%; background: var(--bg-alt);
-  border-top: 1px solid var(--line); padding: 16px 20px 24px;
-}
-.tool-panel-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
-  gap: 14px 18px; align-items: start;
-}
-.tool-panel-section {
-  display: flex; flex-direction: column; gap: 6px;
-  min-width: 0; font-size: 11px; line-height: 1.4;
-  margin: 0; padding: 0; border: none;
-}
-.tool-panel-section select,
-.tool-panel-section input:not([type="radio"]):not([type="checkbox"]),
-.tool-panel-section .btn,
-.tool-panel-section .method-toggle,
-.tool-panel-section .method-toggle label {
-  width: 100%; max-width: 100%; box-sizing: border-box;
-}
-.tool-panel-section input[type="radio"],
-.tool-panel-section input[type="checkbox"] {
-  width: auto; max-width: none; flex-shrink: 0;
-}
-.tool-panel-section.span-2 { grid-column: span 2; }
-.tool-panel-section .panel-title {
-  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--ink-2); margin: 0 0 2px;
-}
-.tool-panel .calc-cell { display: flex; flex-direction: column; gap: 6px; }
-.tool-panel .calc-cell .btn { margin: 0; width: 100%; }
-.tool-panel input, .tool-panel select, .tool-panel textarea {
-  padding: 4px 8px; height: 26px; font-size: 11px; width: 100%;
-  border: 1px solid var(--line); border-radius: 4px;
-  background: var(--surface); color: var(--ink); font-family: var(--f-mono);
-}
-.tool-panel input[type="checkbox"],
-.tool-panel input[type="radio"] { width: auto; height: auto; flex-shrink: 0; }
-.tool-panel input:focus, .tool-panel select:focus { outline: none; border-color: var(--area-ac); }
-.tool-panel .checkbox-row {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 11px; color: var(--ink-2); cursor: pointer; margin: 0;
-}
-.tool-panel .panel-label {
-  display: block; font-size: 11px; color: var(--ink-2); margin: 0 0 1px;
-}
-.tool-panel .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.tool-panel .input-row.full { grid-template-columns: 1fr; }
-.tool-panel .btn {
-  width: 100%; height: 28px; padding: 4px 10px; font-size: 11px;
-  font-family: var(--f-mono); text-transform: uppercase; letter-spacing: 0.05em;
-  font-weight: 500; border-radius: 6px; cursor: pointer; border: 1px solid transparent;
-  background: var(--area-ac); color: #15171a;
-  transition: filter .15s, background .15s, border-color .15s, color .15s;
-}
-.tool-panel .btn:hover { filter: brightness(1.08); }
-.tool-panel .btn:disabled { opacity: .45; cursor: not-allowed; filter: none; }
-.tool-panel .btn.secondary {
-  background: var(--surface); border: 1px solid var(--ink-2); color: var(--ink);
-}
-.tool-panel .btn.secondary:hover {
-  filter: none; background: color-mix(in srgb, var(--ink) 8%, var(--surface)); border-color: var(--ink);
-}
-.tool-panel .btn.danger {
-  background: transparent; border: 1px solid var(--danger); color: var(--danger);
-}
-.tool-panel .btn.danger:hover { filter: none; background: var(--danger-bg); }
-.zoom-hint {
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  background: rgba(0,0,0,0.78); color: #fff; padding: 10px 18px;
-  border-radius: 6px; font-family: var(--f-mono); font-size: 13px;
-  letter-spacing: 0.04em; pointer-events: none; opacity: 0;
-  transition: opacity 0.18s ease; z-index: 600;
-}
-.zoom-hint.visible { opacity: 1; }
-.leaflet-control-locate {
-  width: 30px; height: 30px; background: var(--bg-alt);
-  border: 1px solid var(--line); border-radius: 4px; cursor: pointer;
-  font-size: 16px; line-height: 1; padding: 0;
-  display: flex; align-items: center; justify-content: center; transition: background 0.15s;
-}
-.leaflet-control-locate:hover { background: color-mix(in srgb, var(--ink) 8%, var(--bg-alt)); }
-.leaflet-control-locate.locating { animation: locate-pulse 1.1s ease-in-out infinite; }
-@keyframes locate-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
-.leaflet-control-screenshot {
-  width: 30px; height: 30px; background: var(--bg-alt);
-  border: 1px solid var(--line); border-radius: 4px; cursor: pointer;
-  font-size: 15px; line-height: 1; padding: 0;
-  display: flex; align-items: center; justify-content: center; transition: background 0.15s;
-}
-.leaflet-control-screenshot:hover { background: color-mix(in srgb, var(--ink) 8%, var(--bg-alt)); }
-.leaflet-control-screenshot.capturing { animation: screenshot-pulse 1.1s ease-in-out infinite; cursor: progress; }
-@keyframes screenshot-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
-@media (max-width: 900px) {
-  .tool-map { height: 55vh; min-height: 320px; }
-  .tool-panel-grid { grid-template-columns: 1fr; }
-  .tool-panel-section.span-2 { grid-column: auto; }
-}
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--f-sans);
+      font-size: 15px;
+      line-height: 1.6;
+    }
 
-/* ===== Component-specific (BarrierCalculator scoped, :global stripped) ===== */
-.barrier-calc-map .leaflet-container,
-.barrier-calc-map .leaflet-tile-pane,
-.barrier-calc-map .leaflet-map-pane { background: var(--bg-alt) !important; }
-.barrier-calc-map.osm-off .leaflet-container { background: var(--bg-alt) !important; }
-#map { background: var(--bg-alt); }
+    .container,
+    .frame {
+      max-width: var(--maxw);
+      margin: 0 auto;
+      padding: 0 clamp(20px, 4vw, 48px);
+    }
 
-.mode-toggle{
-  display: flex; border: 1px solid var(--line); border-radius: 6px;
-  overflow: hidden; margin-bottom: 12px;
-}
-.mode-toggle button{
-  flex: 1; background: transparent; border: none;
-  padding: 8px 12px; cursor: pointer; color: var(--ink-2);
-  font-family: var(--f-mono); font-size: 11px;
-  text-transform: uppercase; letter-spacing: 0.04em;
-}
-.mode-toggle button:not(:last-child){ border-right: 1px solid var(--line); }
-.mode-toggle button.active{ background: var(--area-ac); color: var(--surface); }
-html[data-theme='dark'] .mode-toggle button.active{ color: var(--bg); }
-.mode-toggle button:hover:not(.active){ background: var(--bg); }
+    /* ===== Header standalone minimale ===== */
+    .header-mock {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      padding: 14px 0;
+      font-family: var(--f-mono);
+      font-size: 12px;
+      color: var(--ink-2);
+    }
 
-.draw-status{
-  font-family: var(--f-mono); font-size: 11px;
-  padding: 8px 10px; background: var(--surface);
-  border: 1px solid var(--line); border-radius: 4px;
-  margin-bottom: 8px; color: var(--ink-2);
-}
-.draw-status.active{ border-color: var(--area-ac); color: var(--area-ac); }
-.draw-status strong{ color: var(--ink); }
+    .header-mock-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
 
-.stats-grid{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-.stat-box{
-  background: var(--surface); border: 1px solid var(--line);
-  border-radius: 4px; padding: 10px;
-}
-.stat-label{
-  font-family: var(--f-mono); font-size: 10px; color: var(--ink-2);
-  text-transform: uppercase; letter-spacing: 0.04em;
-}
-.stat-value{
-  font-family: var(--f-mono); font-size: 18px; font-weight: 500;
-  color: var(--ink); margin-top: 2px;
-}
-.stat-value.good{ color: var(--accent); }
-.stat-value.warn{ color: var(--area-ac); }
+    .header-mock .breadcrumb a {
+      color: var(--ink-2);
+      text-decoration: none;
+    }
 
-.fab-hint{
-  position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
-  background: var(--ink); color: var(--bg);
-  padding: 8px 16px; border-radius: 20px; font-family: var(--f-mono);
-  font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase;
-  z-index: 1000; box-shadow: 0 4px 16px rgba(0,0,0,0.2); display: none;
-}
-.fab-hint.active{ display: block; }
-html[data-theme='dark'] .fab-hint{ background: var(--accent); color: var(--bg); }
+    .header-mock .breadcrumb a:hover {
+      color: var(--area-ac);
+    }
 
-.status-bar{
-  position: absolute; top: 16px; right: 16px;
-  background: var(--surface); border: 1px solid var(--line);
-  border-radius: 6px; padding: 8px 12px; z-index: 1000;
-  font-family: var(--f-mono); font-size: 11px; color: var(--ink-2);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: none;
-  max-width: 250px;
-}
-.status-bar.active{ display: block; }
-.status-bar .ok{ color: var(--accent); }
+    .header-mock .breadcrumb .sep {
+      color: var(--line-2);
+      margin: 0 8px;
+    }
 
-.legend{
-  position: absolute; bottom: 16px; left: 16px;
-  background: var(--surface); border: 1px solid var(--line);
-  border-radius: 6px; padding: 10px 14px; z-index: 1000;
-  font-family: var(--f-mono); font-size: 11px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-.cursor-readout{
-  position: absolute; bottom: 16px; right: 16px;
-  background: var(--surface); border: 1px solid var(--area-ac);
-  border-radius: 6px; padding: 12px 16px; z-index: 1000;
-  font-family: var(--f-mono); font-size: 12px; min-width: 200px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.15); display: none;
-}
-.cursor-readout.active{ display: block; }
-.cursor-readout .label{
-  font-size: 10px; color: var(--ink-2); text-transform: uppercase;
-  letter-spacing: 0.05em; margin-bottom: 6px;
-}
-.cursor-readout .row{
-  display: flex; justify-content: space-between; gap: 12px;
-  padding: 3px 0; color: var(--ink);
-}
-.cursor-readout .row .k{ color: var(--ink-2); }
-.cursor-readout .row .v{ font-weight: 500; }
-.cursor-readout .row.il-row .v{ color: var(--area-ac); font-size: 14px; }
-.legend-title{
-  color: var(--ink-2); text-transform: uppercase;
-  letter-spacing: 0.05em; font-size: 10px; margin-bottom: 6px;
-}
-.legend-scale{ display: flex; align-items: center; gap: 6px; }
-.legend-gradient{ width: 240px; height: 14px; border-radius: 2px; border: 1px solid var(--line); }
-.legend-labels{
-  display: flex; justify-content: space-between; width: 240px;
-  margin-top: 3px; color: var(--ink-2); font-size: 10px; font-family: var(--f-mono);
-}
-.legend-labels span{ position: relative; text-align: center; }
-.legend-labels span::before{
-  content: ''; position: absolute; top: -6px; left: 50%;
-  width: 1px; height: 4px; background: var(--ink-2);
-}
-.legend .legend-unit{
-  font-family: var(--f-mono); font-size: 9px; color: var(--ink-2);
-  text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; text-align: center;
-}
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
 
-.disclaimer-strip{
-  background: var(--bg-alt); border-top: 1px solid var(--line);
-  padding: 20px 0; font-size: 13px; color: var(--ink-2);
-}
-.disclaimer-strip strong{ color: var(--ink); }
-.cta-strip{ background: var(--ink); color: var(--bg); padding: 36px 0; margin-top: 40px; }
-html[data-theme='dark'] .cta-strip{
-  background: var(--surface); color: var(--ink); border-top: 1px solid var(--line);
-}
-.cta-inner{
-  display: flex; justify-content: space-between; align-items: center;
-  flex-wrap: wrap; gap: 20px;
-}
-.cta-text{ font-size: 18px; line-height: 1.4; max-width: 600px; }
-.cta-text small{
-  display: block; font-family: var(--f-mono); font-size: 11px;
-  color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;
-}
-.cta-btn{
-  background: var(--area-ac); color: var(--ink); padding: 12px 24px;
-  border-radius: 6px; text-decoration: none; font-family: var(--f-mono);
-  font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500;
-  white-space: nowrap;
-}
-.cta-btn:hover{ background: var(--accent-2); }
+    .theme-toggle,
+    .lang-toggle {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--ink-2);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: var(--f-mono);
+      font-size: 11px;
+      cursor: pointer;
+    }
 
-.doc-section{ padding: 40px 0; }
-.doc-section h2{ font-size: 24px; margin: 0 0 16px; font-weight: 600; }
-.doc-section h3{ font-size: 18px; margin: 24px 0 10px; font-weight: 600; }
-.doc-section p, .doc-section ul, .doc-section ol{ color: var(--ink-2); max-width: 70ch; }
-.doc-section li{ margin-bottom: 6px; }
-.doc-section p.doc-callout{
-  border-left: 3px solid var(--area-ac);
-  background: var(--bg-alt);
-  padding: 12px 16px; border-radius: 0 4px 4px 0;
-  margin: 24px 0 10px;
-}
-.doc-section p.doc-callout strong{ color: var(--ink); }
+    .theme-toggle:hover,
+    .lang-toggle:hover {
+      color: var(--ink);
+      border-color: var(--ink-2);
+    }
 
-.participation-badge{
-  display: flex; align-items: center; gap: 6px;
-  margin-top: 6px; padding: 4px 8px;
-  border-left: 2px solid var(--area-ac);
-  font-family: var(--f-mono); font-size: 10.5px; color: var(--ink-2);
-  background: color-mix(in srgb, var(--area-ac) 6%, transparent);
-}
-.participation-count{ color: var(--ink); font-weight: 600; }
+    /* ===== Eyebrow dot (da global.css) ===== */
+    .eyebrow .dot {
+      animation: pulse 2.4s ease-in-out infinite;
+    }
 
-.spectrum-info-wrap{ display: flex; align-items: center; gap: 6px; position: relative; }
-.spectrum-info-wrap select{ flex: 1 1 auto; width: auto; min-width: 0; }
-.info-btn{
-  flex-shrink: 0; width: 22px; height: 22px;
-  background: transparent; border: 1px solid var(--line);
-  border-radius: 50%; cursor: pointer; font-size: 12px;
-  color: var(--ink-2); display: flex; align-items: center;
-  justify-content: center; padding: 0;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-.info-btn:hover{
-  background: color-mix(in srgb, var(--ink) 8%, transparent);
-  color: var(--ink); border-color: var(--ink-2);
-}
-.info-btn[aria-expanded="true"]{
-  background: var(--area-ac); color: #000; border-color: var(--area-ac);
-}
-.info-popover{
-  position: absolute; top: calc(100% + 6px); left: 0; right: 0;
-  z-index: 50; background: var(--bg-alt); border: 1px solid var(--line);
-  border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.35);
-  padding: 12px 14px 14px; font-size: 11px; line-height: 1.45;
-}
-.info-popover[hidden]{ display: none; }
-.info-popover-close{
-  position: absolute; top: 6px; right: 8px; background: none;
-  border: 0; color: var(--ink-2); cursor: pointer; font-size: 18px;
-  line-height: 1; padding: 2px 6px;
-}
-.info-popover-close:hover{ color: var(--ink); }
-.info-popover-title{
-  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--area-ac); margin: 0 0 6px;
-}
-.info-popover-desc{ margin: 0 0 10px; color: var(--ink); }
-.info-popover-formula{
-  margin: 0 0 10px; padding: 6px 8px;
-  background: color-mix(in srgb, var(--ink) 4%, transparent);
-  border-left: 2px solid var(--area-ac); border-radius: 0 4px 4px 0;
-}
-.formula-label, .spectrum-label{
-  display: block; font-family: var(--f-mono); font-size: 9.5px;
-  letter-spacing: 0.06em; color: var(--ink-2); text-transform: uppercase;
-  margin-bottom: 3px;
-}
-.info-popover-formula code{
-  font-family: var(--f-mono); font-size: 11px; color: var(--ink);
-}
-.info-popover-spectrum{ margin-top: 6px; }
-.info-popover-spectrum canvas{
-  display: block; width: 100%; max-width: 100%; height: auto;
-  background: color-mix(in srgb, var(--ink) 4%, transparent);
-  border-radius: 4px;
-}
-.doc-section code{
-  font-family: var(--f-mono); background: var(--bg-alt);
-  padding: 2px 6px; border-radius: 3px; font-size: 12px; color: var(--ink);
-}
-.doc-section pre{
-  background: var(--bg-alt); border: 1px solid var(--line);
-  border-radius: 6px; padding: 14px 16px;
-  white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: hidden;
-  font-size: 12px; line-height: 1.6; max-width: 70ch; margin: 8px 0 12px;
-}
-.doc-section pre code{ background: transparent; padding: 0; border-radius: 0; color: var(--ink); font-size: inherit; }
+    @keyframes pulse {
 
-.leaflet-container{ background: var(--bg-alt); font-family: var(--f-sans); }
-.leaflet-tooltip{
-  background: var(--ink); color: var(--bg); border: none;
-  font-family: var(--f-mono); font-size: 11px; padding: 4px 8px;
-}
-.leaflet-tooltip::before{ border: none; }
-.leaflet-container.pick-mode{ cursor: crosshair !important; }
-.leaflet-container.pick-mode .leaflet-interactive{ cursor: crosshair !important; }
-.leaflet-container.draw-mode{ cursor: crosshair !important; }
-.leaflet-container.draw-mode .leaflet-interactive{ cursor: crosshair !important; }
-.leaflet-container.draw-mode .leaflet-tile{ cursor: crosshair !important; }
-.metric-grid-canvas{ position: absolute; top: 0; left: 0; pointer-events: none; z-index: 400; }
+      0%,
+      100% {
+        opacity: 1;
+      }
 
-.method-toggle{ display: flex; flex-direction: column; gap: 6px; }
-.method-toggle label{
-  display: flex; align-items: flex-start; gap: 8px;
-  padding: 8px 10px; border: 1px solid var(--line); border-radius: 5px;
-  background: var(--surface); cursor: pointer; transition: border-color .15s;
-}
-.method-toggle label:hover{ border-color: var(--area-ac); }
-.method-toggle label.checked{ border-color: var(--area-ac); background: var(--area-ac-glow); }
-.method-toggle input[type="radio"]{ margin-top: 3px; flex-shrink: 0; }
-.method-toggle .method-info{ flex: 1; min-width: 0; }
-.method-toggle .method-name{ font-family: var(--f-mono); font-size: 12px; font-weight: 500; color: var(--ink); }
-.method-toggle .method-desc{ font-family: var(--f-mono); font-size: 10px; color: var(--ink-2); margin-top: 2px; line-height: 1.4; }
+      50% {
+        opacity: .4;
+      }
+    }
 
-.crosssection-panel{
-  margin: 0 0 40px; border: 1px solid var(--line); border-radius: 10px;
-  background: var(--surface); overflow: hidden; display: none;
-}
-.crosssection-panel.active{ display: block; }
-.crosssection-header{
-  padding: 14px 20px; background: var(--bg-alt); border-bottom: 1px solid var(--line);
-  display: flex; justify-content: space-between; align-items: center;
-  gap: 16px; flex-wrap: wrap;
-}
-.crosssection-header h3{
-  margin: 0; font-size: 14px; font-family: var(--f-mono); font-weight: 500;
-  text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2);
-}
-.crosssection-meta{ font-family: var(--f-mono); font-size: 12px; color: var(--ink-2); }
-.crosssection-meta strong{ color: var(--ink); }
-.crosssection-body{ padding: 16px; overflow-x: auto; }
-.crosssection-svg{ width: 100%; min-width: 600px; height: auto; display: block; }
-.crosssection-close{
-  background: transparent; border: 1px solid var(--line); color: var(--ink-2);
-  padding: 4px 10px; font-family: var(--f-mono); font-size: 11px;
-  border-radius: 4px; cursor: pointer;
-}
-.crosssection-close:hover{ color: var(--ink); border-color: var(--ink-2); }
+    /* ===== Hero + tag (component scoped, :global stripped) ===== */
+    .bc-top {
+      padding-top: clamp(18px, 3vw, 28px);
+    }
 
-.crosssection-svg .cs-ground{ fill: var(--bg-alt); stroke: var(--ink-2); stroke-width: 1.5; }
-.crosssection-svg .cs-axis{ stroke: var(--ink-2); stroke-width: 1; }
-.crosssection-svg .cs-tick-label{ fill: var(--ink-2); font-family: var(--f-mono); font-size: 10px; }
-.crosssection-svg .cs-axis-label{ fill: var(--ink-2); font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
-.crosssection-svg .cs-grid-line{ stroke: var(--line); stroke-width: 0.5; stroke-dasharray: 2,2; }
-.crosssection-svg .cs-source{ fill: #d8302a; stroke: var(--surface); stroke-width: 2; }
-.crosssection-svg .cs-source-label{ fill: #d8302a; font-family: var(--f-mono); font-size: 11px; font-weight: 600; }
-.crosssection-svg .cs-receiver{ fill: #2c6ddf; stroke: var(--surface); stroke-width: 2; }
-.crosssection-svg .cs-receiver-label{ fill: #2c6ddf; font-family: var(--f-mono); font-size: 11px; font-weight: 600; }
-.crosssection-svg .cs-barrier{ fill: #15171a; stroke: #ff8c1a; stroke-width: 2; }
-html[data-theme='dark'] .crosssection-svg .cs-barrier{ fill: #2a2d33; }
-.crosssection-svg .cs-barrier-label{ fill: var(--area-ac); font-family: var(--f-mono); font-size: 11px; font-weight: 600; }
-.crosssection-svg .cs-los-direct{ stroke: #888; stroke-width: 1.2; stroke-dasharray: 4,3; fill: none; }
-.crosssection-svg .cs-los-diffracted{ stroke: #ff8c1a; stroke-width: 2; fill: none; }
-.crosssection-svg .cs-info-box{ fill: var(--surface); stroke: var(--line); stroke-width: 1; }
-.crosssection-svg .cs-info-text{ fill: var(--ink); font-family: var(--f-mono); font-size: 11px; }
-.crosssection-svg .cs-info-text.dim{ fill: var(--ink-2); }
-.crosssection-svg .cs-info-text.accent{ fill: var(--area-ac); font-weight: 600; }
+    .bc-breadcrumb {
+      font-family: var(--f-mono);
+      font-size: 12px;
+      color: var(--ink-2);
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
 
-.calc-spinner{
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  background: var(--surface); border: 1px solid var(--area-ac); border-radius: 10px;
-  padding: 24px 32px; z-index: 2000; box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-  display: none; text-align: center; font-family: var(--f-mono); min-width: 240px;
-}
-.calc-spinner.active{ display: block; }
-.spinner-ring{
-  width: 48px; height: 48px; margin: 0 auto 12px;
-  border: 4px solid var(--bg-alt); border-top-color: var(--area-ac);
-  border-radius: 50%; animation: bc-spinner-rotate 0.9s linear infinite;
-}
-@keyframes bc-spinner-rotate{ to { transform: rotate(360deg); } }
-.spinner-label{ font-size: 12px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
-.spinner-progress{ font-size: 22px; color: var(--area-ac); font-weight: 500; }
-.spinner-detail{ font-size: 10px; color: var(--ink-2); margin-top: 4px; }
+    .bc-breadcrumb a {
+      color: var(--ink-2);
+      text-decoration: none;
+    }
 
-.grid-toggle{
-  position: absolute; top: 16px; left: 16px;
-  background: var(--surface); border: 1px solid var(--line); border-radius: 5px;
-  padding: 6px 12px; z-index: 1000; font-family: var(--f-mono);
-  font-size: 11px; color: var(--ink-2); cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08); user-select: none;
-}
-.grid-toggle:hover{ color: var(--ink); border-color: var(--area-ac); }
-.grid-toggle.active{ background: var(--area-ac-glow); color: var(--area-ac); border-color: var(--area-ac); }
+    .bc-breadcrumb a:hover {
+      color: var(--area-ac);
+    }
 
-.app-footer{
-  border-top: 1px solid var(--line); padding: 20px 0;
-  font-family: var(--f-mono); font-size: 11px; color: var(--ink-2);
-}
-.app-footer a{ color: var(--ink-2); text-decoration: none; }
-.app-footer a:hover{ color: var(--area-ac); }
+    .bc-breadcrumb .sep {
+      color: var(--line-2);
+      margin: 0 8px;
+    }
 
-@media (max-width: 700px){
-  .cta-inner{ flex-direction: column; align-items: flex-start; }
-}
+    .bc-hero {
+      padding: clamp(28px, 5vw, 52px) 0 clamp(20px, 3vw, 36px);
+      border-bottom: 1px solid var(--line);
+    }
 
-/* ======================================================================
+    .bc-eyebrow {
+      font-family: var(--f-mono);
+      font-size: 12px;
+      color: var(--area-ac);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin: 0 0 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .bc-eyebrow .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--area-ac);
+      box-shadow: 0 0 6px var(--area-ac);
+    }
+
+    .bc-h1 {
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.1;
+      font-weight: 600;
+      margin: 0 0 12px;
+      letter-spacing: -0.02em;
+    }
+
+    .bc-h1 em {
+      color: var(--area-ac);
+      font-style: normal;
+    }
+
+    .hero-sub {
+      color: var(--ink-2);
+      font-size: clamp(15px, 1.4vw, 17px);
+      margin: 0 0 20px;
+      max-width: 70ch;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .tag {
+      font-family: var(--f-mono);
+      font-size: 11px;
+      padding: 4px 9px;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      color: var(--ink-2);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .tag.beta {
+      color: var(--area-ac);
+      border-color: var(--area-ac);
+    }
+
+    /* ===== Tool shell condiviso (da global.css — layout FLUID) ===== */
+    .tool-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin: 24px 0 40px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    .tool-map {
+      width: 100%;
+      height: 62vh;
+      min-height: 420px;
+      max-height: 820px;
+      flex-shrink: 0;
+      position: relative;
+      background: var(--bg-alt);
+    }
+
+    .tool-map #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    .tool-panel {
+      width: 100%;
+      background: var(--bg-alt);
+      border-top: 1px solid var(--line);
+      padding: 16px 20px 24px;
+    }
+
+    .tool-panel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+      gap: 14px 18px;
+      align-items: start;
+    }
+
+    .tool-panel-section {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+      font-size: 11px;
+      line-height: 1.4;
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+
+    .tool-panel-section select,
+    .tool-panel-section input:not([type="radio"]):not([type="checkbox"]),
+    .tool-panel-section .btn,
+    .tool-panel-section .method-toggle,
+    .tool-panel-section .method-toggle label {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    .tool-panel-section input[type="radio"],
+    .tool-panel-section input[type="checkbox"] {
+      width: auto;
+      max-width: none;
+      flex-shrink: 0;
+    }
+
+    .tool-panel-section.span-2 {
+      grid-column: span 2;
+    }
+
+    .tool-panel-section .panel-title {
+      font-family: var(--f-mono);
+      font-size: 10.5px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-2);
+      margin: 0 0 2px;
+    }
+
+    .tool-panel .calc-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .tool-panel .calc-cell .btn {
+      margin: 0;
+      width: 100%;
+    }
+
+    .tool-panel input,
+    .tool-panel select,
+    .tool-panel textarea {
+      padding: 4px 8px;
+      height: 26px;
+      font-size: 11px;
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--ink);
+      font-family: var(--f-mono);
+    }
+
+    .tool-panel input[type="checkbox"],
+    .tool-panel input[type="radio"] {
+      width: auto;
+      height: auto;
+      flex-shrink: 0;
+    }
+
+    .tool-panel input:focus,
+    .tool-panel select:focus {
+      outline: none;
+      border-color: var(--area-ac);
+    }
+
+    .tool-panel .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--ink-2);
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .tool-panel .panel-label {
+      display: block;
+      font-size: 11px;
+      color: var(--ink-2);
+      margin: 0 0 1px;
+    }
+
+    .tool-panel .input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .tool-panel .input-row.full {
+      grid-template-columns: 1fr;
+    }
+
+    .tool-panel .btn {
+      width: 100%;
+      height: 28px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-family: var(--f-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      background: var(--area-ac);
+      color: #15171a;
+      transition: filter .15s, background .15s, border-color .15s, color .15s;
+    }
+
+    .tool-panel .btn:hover {
+      filter: brightness(1.08);
+    }
+
+    .tool-panel .btn:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      filter: none;
+    }
+
+    .tool-panel .btn.secondary {
+      background: var(--surface);
+      border: 1px solid var(--ink-2);
+      color: var(--ink);
+    }
+
+    .tool-panel .btn.secondary:hover {
+      filter: none;
+      background: color-mix(in srgb, var(--ink) 8%, var(--surface));
+      border-color: var(--ink);
+    }
+
+    .tool-panel .btn.danger {
+      background: transparent;
+      border: 1px solid var(--danger);
+      color: var(--danger);
+    }
+
+    .tool-panel .btn.danger:hover {
+      filter: none;
+      background: var(--danger-bg);
+    }
+
+    .zoom-hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.78);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-family: var(--f-mono);
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.18s ease;
+      z-index: 600;
+    }
+
+    .zoom-hint.visible {
+      opacity: 1;
+    }
+
+    .leaflet-control-locate {
+      width: 30px;
+      height: 30px;
+      background: var(--bg-alt);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+
+    .leaflet-control-locate:hover {
+      background: color-mix(in srgb, var(--ink) 8%, var(--bg-alt));
+    }
+
+    .leaflet-control-locate.locating {
+      animation: locate-pulse 1.1s ease-in-out infinite;
+    }
+
+    @keyframes locate-pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.45;
+      }
+    }
+
+    .leaflet-control-screenshot {
+      width: 30px;
+      height: 30px;
+      background: var(--bg-alt);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 15px;
+      line-height: 1;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+
+    .leaflet-control-screenshot:hover {
+      background: color-mix(in srgb, var(--ink) 8%, var(--bg-alt));
+    }
+
+    .leaflet-control-screenshot.capturing {
+      animation: screenshot-pulse 1.1s ease-in-out infinite;
+      cursor: progress;
+    }
+
+    @keyframes screenshot-pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.45;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .tool-map {
+        height: 55vh;
+        min-height: 320px;
+      }
+
+      .tool-panel-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .tool-panel-section.span-2 {
+        grid-column: auto;
+      }
+    }
+
+    /* ===== Component-specific (BarrierCalculator scoped, :global stripped) ===== */
+    .barrier-calc-map .leaflet-container,
+    .barrier-calc-map .leaflet-tile-pane,
+    .barrier-calc-map .leaflet-map-pane {
+      background: var(--bg-alt) !important;
+    }
+
+    .barrier-calc-map.osm-off .leaflet-container {
+      background: var(--bg-alt) !important;
+    }
+
+    #map {
+      background: var(--bg-alt);
+    }
+
+    .mode-toggle {
+      display: flex;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .mode-toggle button {
+      flex: 1;
+      background: transparent;
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+      color: var(--ink-2);
+      font-family: var(--f-mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .mode-toggle button:not(:last-child) {
+      border-right: 1px solid var(--line);
+    }
+
+    .mode-toggle button.active {
+      background: var(--area-ac);
+      color: var(--surface);
+    }
+
+    html[data-theme='dark'] .mode-toggle button.active {
+      color: var(--bg);
+    }
+
+    .mode-toggle button:hover:not(.active) {
+      background: var(--bg);
+    }
+
+    .draw-status {
+      font-family: var(--f-mono);
+      font-size: 11px;
+      padding: 8px 10px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      margin-bottom: 8px;
+      color: var(--ink-2);
+    }
+
+    .draw-status.active {
+      border-color: var(--area-ac);
+      color: var(--area-ac);
+    }
+
+    .draw-status strong {
+      color: var(--ink);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .stat-box {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 10px;
+    }
+
+    .stat-label {
+      font-family: var(--f-mono);
+      font-size: 10px;
+      color: var(--ink-2);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .stat-value {
+      font-family: var(--f-mono);
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--ink);
+      margin-top: 2px;
+    }
+
+    .stat-value.good {
+      color: var(--accent);
+    }
+
+    .stat-value.warn {
+      color: var(--area-ac);
+    }
+
+    .fab-hint {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--ink);
+      color: var(--bg);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-family: var(--f-mono);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      z-index: 1000;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      display: none;
+    }
+
+    .fab-hint.active {
+      display: block;
+    }
+
+    html[data-theme='dark'] .fab-hint {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .status-bar {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px 12px;
+      z-index: 1000;
+      font-family: var(--f-mono);
+      font-size: 11px;
+      color: var(--ink-2);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      display: none;
+      max-width: 250px;
+    }
+
+    .status-bar.active {
+      display: block;
+    }
+
+    .status-bar .ok {
+      color: var(--accent);
+    }
+
+    .legend {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px 14px;
+      z-index: 1000;
+      font-family: var(--f-mono);
+      font-size: 11px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .cursor-readout {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      background: var(--surface);
+      border: 1px solid var(--area-ac);
+      border-radius: 6px;
+      padding: 12px 16px;
+      z-index: 1000;
+      font-family: var(--f-mono);
+      font-size: 12px;
+      min-width: 200px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+      display: none;
+    }
+
+    .cursor-readout.active {
+      display: block;
+    }
+
+    .cursor-readout .label {
+      font-size: 10px;
+      color: var(--ink-2);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .cursor-readout .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 3px 0;
+      color: var(--ink);
+    }
+
+    .cursor-readout .row .k {
+      color: var(--ink-2);
+    }
+
+    .cursor-readout .row .v {
+      font-weight: 500;
+    }
+
+    .cursor-readout .row.il-row .v {
+      color: var(--area-ac);
+      font-size: 14px;
+    }
+
+    .legend-title {
+      color: var(--ink-2);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 10px;
+      margin-bottom: 6px;
+    }
+
+    .legend-scale {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-gradient {
+      width: 240px;
+      height: 14px;
+      border-radius: 2px;
+      border: 1px solid var(--line);
+    }
+
+    .legend-labels {
+      display: flex;
+      justify-content: space-between;
+      width: 240px;
+      margin-top: 3px;
+      color: var(--ink-2);
+      font-size: 10px;
+      font-family: var(--f-mono);
+    }
+
+    .legend-labels span {
+      position: relative;
+      text-align: center;
+    }
+
+    .legend-labels span::before {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: 50%;
+      width: 1px;
+      height: 4px;
+      background: var(--ink-2);
+    }
+
+    .legend .legend-unit {
+      font-family: var(--f-mono);
+      font-size: 9px;
+      color: var(--ink-2);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+      text-align: center;
+    }
+
+    .disclaimer-strip {
+      background: var(--bg-alt);
+      border-top: 1px solid var(--line);
+      padding: 20px 0;
+      font-size: 13px;
+      color: var(--ink-2);
+    }
+
+    .disclaimer-strip strong {
+      color: var(--ink);
+    }
+
+    .cta-strip {
+      background: var(--ink);
+      color: var(--bg);
+      padding: 36px 0;
+      margin-top: 40px;
+    }
+
+    html[data-theme='dark'] .cta-strip {
+      background: var(--surface);
+      color: var(--ink);
+      border-top: 1px solid var(--line);
+    }
+
+    .cta-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .cta-text {
+      font-size: 18px;
+      line-height: 1.4;
+      max-width: 600px;
+    }
+
+    .cta-text small {
+      display: block;
+      font-family: var(--f-mono);
+      font-size: 11px;
+      color: var(--ink-2);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .cta-btn {
+      background: var(--area-ac);
+      color: var(--ink);
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-family: var(--f-mono);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .cta-btn:hover {
+      background: var(--accent-2);
+    }
+
+    .doc-section {
+      padding: 40px 0;
+    }
+
+    .doc-section h2 {
+      font-size: 24px;
+      margin: 0 0 16px;
+      font-weight: 600;
+    }
+
+    .doc-section h3 {
+      font-size: 18px;
+      margin: 24px 0 10px;
+      font-weight: 600;
+    }
+
+    .doc-section p,
+    .doc-section ul,
+    .doc-section ol {
+      color: var(--ink-2);
+      max-width: 70ch;
+    }
+
+    .doc-section li {
+      margin-bottom: 6px;
+    }
+
+    .doc-section p.doc-callout {
+      border-left: 3px solid var(--area-ac);
+      background: var(--bg-alt);
+      padding: 12px 16px;
+      border-radius: 0 4px 4px 0;
+      margin: 24px 0 10px;
+    }
+
+    .doc-section p.doc-callout strong {
+      color: var(--ink);
+    }
+
+    .participation-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+      padding: 4px 8px;
+      border-left: 2px solid var(--area-ac);
+      font-family: var(--f-mono);
+      font-size: 10.5px;
+      color: var(--ink-2);
+      background: color-mix(in srgb, var(--area-ac) 6%, transparent);
+    }
+
+    .participation-count {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .spectrum-info-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+    }
+
+    .spectrum-info-wrap select {
+      flex: 1 1 auto;
+      width: auto;
+      min-width: 0;
+    }
+
+    .info-btn {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      background: transparent;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--ink-2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .info-btn:hover {
+      background: color-mix(in srgb, var(--ink) 8%, transparent);
+      color: var(--ink);
+      border-color: var(--ink-2);
+    }
+
+    .info-btn[aria-expanded="true"] {
+      background: var(--area-ac);
+      color: #000;
+      border-color: var(--area-ac);
+    }
+
+    .info-popover {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: var(--bg-alt);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      padding: 12px 14px 14px;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .info-popover[hidden] {
+      display: none;
+    }
+
+    .info-popover-close {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      background: none;
+      border: 0;
+      color: var(--ink-2);
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      padding: 2px 6px;
+    }
+
+    .info-popover-close:hover {
+      color: var(--ink);
+    }
+
+    .info-popover-title {
+      font-family: var(--f-mono);
+      font-size: 10.5px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--area-ac);
+      margin: 0 0 6px;
+    }
+
+    .info-popover-desc {
+      margin: 0 0 10px;
+      color: var(--ink);
+    }
+
+    .info-popover-formula {
+      margin: 0 0 10px;
+      padding: 6px 8px;
+      background: color-mix(in srgb, var(--ink) 4%, transparent);
+      border-left: 2px solid var(--area-ac);
+      border-radius: 0 4px 4px 0;
+    }
+
+    .formula-label,
+    .spectrum-label {
+      display: block;
+      font-family: var(--f-mono);
+      font-size: 9.5px;
+      letter-spacing: 0.06em;
+      color: var(--ink-2);
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+
+    .info-popover-formula code {
+      font-family: var(--f-mono);
+      font-size: 11px;
+      color: var(--ink);
+    }
+
+    .info-popover-spectrum {
+      margin-top: 6px;
+    }
+
+    .info-popover-spectrum canvas {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      background: color-mix(in srgb, var(--ink) 4%, transparent);
+      border-radius: 4px;
+    }
+
+    .doc-section code {
+      font-family: var(--f-mono);
+      background: var(--bg-alt);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 12px;
+      color: var(--ink);
+    }
+
+    .doc-section pre {
+      background: var(--bg-alt);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 14px 16px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      overflow-x: hidden;
+      font-size: 12px;
+      line-height: 1.6;
+      max-width: 70ch;
+      margin: 8px 0 12px;
+    }
+
+    .doc-section pre code {
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      color: var(--ink);
+      font-size: inherit;
+    }
+
+    .leaflet-container {
+      background: var(--bg-alt);
+      font-family: var(--f-sans);
+    }
+
+    .leaflet-tooltip {
+      background: var(--ink);
+      color: var(--bg);
+      border: none;
+      font-family: var(--f-mono);
+      font-size: 11px;
+      padding: 4px 8px;
+    }
+
+    .leaflet-tooltip::before {
+      border: none;
+    }
+
+    .leaflet-container.pick-mode {
+      cursor: crosshair !important;
+    }
+
+    .leaflet-container.pick-mode .leaflet-interactive {
+      cursor: crosshair !important;
+    }
+
+    .leaflet-container.draw-mode {
+      cursor: crosshair !important;
+    }
+
+    .leaflet-container.draw-mode .leaflet-interactive {
+      cursor: crosshair !important;
+    }
+
+    .leaflet-container.draw-mode .leaflet-tile {
+      cursor: crosshair !important;
+    }
+
+    .metric-grid-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 400;
+    }
+
+    .method-toggle {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .method-toggle label {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: var(--surface);
+      cursor: pointer;
+      transition: border-color .15s;
+    }
+
+    .method-toggle label:hover {
+      border-color: var(--area-ac);
+    }
+
+    .method-toggle label.checked {
+      border-color: var(--area-ac);
+      background: var(--area-ac-glow);
+    }
+
+    .method-toggle input[type="radio"] {
+      margin-top: 3px;
+      flex-shrink: 0;
+    }
+
+    .method-toggle .method-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .method-toggle .method-name {
+      font-family: var(--f-mono);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    .method-toggle .method-desc {
+      font-family: var(--f-mono);
+      font-size: 10px;
+      color: var(--ink-2);
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+
+    .crosssection-panel {
+      margin: 0 0 40px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface);
+      overflow: hidden;
+      display: none;
+    }
+
+    .crosssection-panel.active {
+      display: block;
+    }
+
+    .crosssection-header {
+      padding: 14px 20px;
+      background: var(--bg-alt);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .crosssection-header h3 {
+      margin: 0;
+      font-size: 14px;
+      font-family: var(--f-mono);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--ink-2);
+    }
+
+    .crosssection-meta {
+      font-family: var(--f-mono);
+      font-size: 12px;
+      color: var(--ink-2);
+    }
+
+    .crosssection-meta strong {
+      color: var(--ink);
+    }
+
+    .crosssection-body {
+      padding: 16px;
+      overflow-x: auto;
+    }
+
+    .crosssection-svg {
+      width: 100%;
+      min-width: 600px;
+      height: auto;
+      display: block;
+    }
+
+    .crosssection-close {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--ink-2);
+      padding: 4px 10px;
+      font-family: var(--f-mono);
+      font-size: 11px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .crosssection-close:hover {
+      color: var(--ink);
+      border-color: var(--ink-2);
+    }
+
+    .crosssection-svg .cs-ground {
+      fill: var(--bg-alt);
+      stroke: var(--ink-2);
+      stroke-width: 1.5;
+    }
+
+    .crosssection-svg .cs-axis {
+      stroke: var(--ink-2);
+      stroke-width: 1;
+    }
+
+    .crosssection-svg .cs-tick-label {
+      fill: var(--ink-2);
+      font-family: var(--f-mono);
+      font-size: 10px;
+    }
+
+    .crosssection-svg .cs-axis-label {
+      fill: var(--ink-2);
+      font-family: var(--f-mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .crosssection-svg .cs-grid-line {
+      stroke: var(--line);
+      stroke-width: 0.5;
+      stroke-dasharray: 2, 2;
+    }
+
+    .crosssection-svg .cs-source {
+      fill: #d8302a;
+      stroke: var(--surface);
+      stroke-width: 2;
+    }
+
+    .crosssection-svg .cs-source-label {
+      fill: #d8302a;
+      font-family: var(--f-mono);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .crosssection-svg .cs-receiver {
+      fill: #2c6ddf;
+      stroke: var(--surface);
+      stroke-width: 2;
+    }
+
+    .crosssection-svg .cs-receiver-label {
+      fill: #2c6ddf;
+      font-family: var(--f-mono);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .crosssection-svg .cs-barrier {
+      fill: #15171a;
+      stroke: #ff8c1a;
+      stroke-width: 2;
+    }
+
+    html[data-theme='dark'] .crosssection-svg .cs-barrier {
+      fill: #2a2d33;
+    }
+
+    .crosssection-svg .cs-barrier-label {
+      fill: var(--area-ac);
+      font-family: var(--f-mono);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .crosssection-svg .cs-los-direct {
+      stroke: #888;
+      stroke-width: 1.2;
+      stroke-dasharray: 4, 3;
+      fill: none;
+    }
+
+    .crosssection-svg .cs-los-diffracted {
+      stroke: #ff8c1a;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .crosssection-svg .cs-info-box {
+      fill: var(--surface);
+      stroke: var(--line);
+      stroke-width: 1;
+    }
+
+    .crosssection-svg .cs-info-text {
+      fill: var(--ink);
+      font-family: var(--f-mono);
+      font-size: 11px;
+    }
+
+    .crosssection-svg .cs-info-text.dim {
+      fill: var(--ink-2);
+    }
+
+    .crosssection-svg .cs-info-text.accent {
+      fill: var(--area-ac);
+      font-weight: 600;
+    }
+
+    .calc-spinner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--surface);
+      border: 1px solid var(--area-ac);
+      border-radius: 10px;
+      padding: 24px 32px;
+      z-index: 2000;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+      display: none;
+      text-align: center;
+      font-family: var(--f-mono);
+      min-width: 240px;
+    }
+
+    .calc-spinner.active {
+      display: block;
+    }
+
+    .spinner-ring {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 12px;
+      border: 4px solid var(--bg-alt);
+      border-top-color: var(--area-ac);
+      border-radius: 50%;
+      animation: bc-spinner-rotate 0.9s linear infinite;
+    }
+
+    @keyframes bc-spinner-rotate {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .spinner-label {
+      font-size: 12px;
+      color: var(--ink-2);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+
+    .spinner-progress {
+      font-size: 22px;
+      color: var(--area-ac);
+      font-weight: 500;
+    }
+
+    .spinner-detail {
+      font-size: 10px;
+      color: var(--ink-2);
+      margin-top: 4px;
+    }
+
+    .grid-toggle {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      padding: 6px 12px;
+      z-index: 1000;
+      font-family: var(--f-mono);
+      font-size: 11px;
+      color: var(--ink-2);
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      user-select: none;
+    }
+
+    .grid-toggle:hover {
+      color: var(--ink);
+      border-color: var(--area-ac);
+    }
+
+    .grid-toggle.active {
+      background: var(--area-ac-glow);
+      color: var(--area-ac);
+      border-color: var(--area-ac);
+    }
+
+    .app-footer {
+      border-top: 1px solid var(--line);
+      padding: 20px 0;
+      font-family: var(--f-mono);
+      font-size: 11px;
+      color: var(--ink-2);
+    }
+
+    .app-footer a {
+      color: var(--ink-2);
+      text-decoration: none;
+    }
+
+    .app-footer a:hover {
+      color: var(--area-ac);
+    }
+
+    @media (max-width: 700px) {
+      .cta-inner {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    /* ======================================================================
  * v0.8 — Result notes + diffracted stats + manual receivers + compact panel
  * ====================================================================== */
 
-/* Multi-column panel: il grid condiviso fa righe alte quanto la sezione
+    /* Multi-column panel: il grid condiviso fa righe alte quanto la sezione
    più alta → spazio sprecato sotto le sezioni corte. Multi-column
    impacchetta verticalmente; .span-2 risultati torna full-width. */
-.tool-panel-grid.barrier-calc-grid {
-  display: block;
-  column-width: 232px;
-  column-gap: 18px;
-}
-.tool-panel-grid.barrier-calc-grid > .tool-panel-section {
-  break-inside: avoid;
-  margin: 0 0 16px;
-}
-.tool-panel-grid.barrier-calc-grid > .span-2 {
-  column-span: all;
-  margin-top: 2px;
-}
+    .tool-panel-grid.barrier-calc-grid {
+      display: block;
+      column-width: 232px;
+      column-gap: 18px;
+    }
 
-/* Results: stats e tabella ricevitori manuali AFFIANCATE; la tabella va
+    .tool-panel-grid.barrier-calc-grid>.tool-panel-section {
+      break-inside: avoid;
+      margin: 0 0 16px;
+    }
+
+    .tool-panel-grid.barrier-calc-grid>.span-2 {
+      column-span: all;
+      margin-top: 2px;
+    }
+
+    /* Results: stats e tabella ricevitori manuali AFFIANCATE; la tabella va
    sotto SOLO se la pagina è troppo stretta (breakpoint dedicato). */
-.bc-results-flex {
-  display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start;
-}
-.bc-stats-col { flex: 1 1 320px; min-width: 0; }
-.manual-receivers-table-wrap {
-  flex: 1 1 300px; min-width: 0;
-  padding: 16px;
-  background: var(--surface); border: 1px solid var(--line);
-  border-radius: 6px;
-}
-@media (max-width: 860px) {
-  .bc-stats-col, .manual-receivers-table-wrap { flex-basis: 100%; }
-}
+    .bc-results-flex {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: flex-start;
+    }
 
-.results-explainer {
-  padding: 14px 16px; margin: 10px 0 16px;
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--accent);
-  background: var(--surface); border-radius: 6px;
-}
-.results-explainer-title {
-  font-family: var(--f-mono); font-size: 12px;
-  text-transform: uppercase; letter-spacing: 0.08em;
-  color: var(--ink-2); margin: 0 0 8px;
-}
-.results-explainer-text {
-  font-size: 13px; line-height: 1.6; color: var(--ink-2); margin: 0;
-}
-.results-explainer-text strong { color: var(--ink); }
-.results-explainer-text em { color: var(--accent); font-style: normal; }
+    .bc-stats-col {
+      flex: 1 1 320px;
+      min-width: 0;
+    }
 
-.stat-sublabel {
-  font-family: var(--f-mono); font-size: 10.5px;
-  color: var(--muted); margin-top: 4px; line-height: 1.3;
-}
+    .manual-receivers-table-wrap {
+      flex: 1 1 300px;
+      min-width: 0;
+      padding: 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
 
-.stat-row-diffracted {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 8px; margin-top: 12px;
-}
-.stat-box-diff {
-  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
-  border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
-}
-@media (max-width: 700px) {
-  .stat-row-diffracted { grid-template-columns: 1fr; }
-}
+    @media (max-width: 860px) {
 
-/* Sezione 9 — Ricevitori manuali */
-.panel-helper {
-  font-size: 12px; color: var(--muted);
-  margin: 0 0 10px; line-height: 1.4;
-}
-.pick-status {
-  font-family: var(--f-mono); font-size: 11.5px;
-  padding: 8px 10px; margin-top: 8px; border-radius: 4px;
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-  border: 1px solid var(--accent); color: var(--ink);
-}
-/* Lista chip compatte (NON una riga piena per ricevitore) */
-#manual-receivers-list {
-  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;
-}
-#manual-receivers-list .manual-receiver-row {
-  display: flex; gap: 4px; align-items: center;
-}
-/* Larghezza giusto per R1..R5; si espande al focus per label personalizzate.
+      .bc-stats-col,
+      .manual-receivers-table-wrap {
+        flex-basis: 100%;
+      }
+    }
+
+    .results-explainer {
+      padding: 14px 16px;
+      margin: 10px 0 16px;
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--accent);
+      background: var(--surface);
+      border-radius: 6px;
+    }
+
+    .results-explainer-title {
+      font-family: var(--f-mono);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-2);
+      margin: 0 0 8px;
+    }
+
+    .results-explainer-text {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--ink-2);
+      margin: 0;
+    }
+
+    .results-explainer-text strong {
+      color: var(--ink);
+    }
+
+    .results-explainer-text em {
+      color: var(--accent);
+      font-style: normal;
+    }
+
+    .stat-sublabel {
+      font-family: var(--f-mono);
+      font-size: 10.5px;
+      color: var(--muted);
+      margin-top: 4px;
+      line-height: 1.3;
+    }
+
+    .stat-row-diffracted {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .stat-box-diff {
+      background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+      border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+    }
+
+    @media (max-width: 700px) {
+      .stat-row-diffracted {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Sezione 9 — Ricevitori manuali */
+    .panel-helper {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0 0 10px;
+      line-height: 1.4;
+    }
+
+    .pick-status {
+      font-family: var(--f-mono);
+      font-size: 11.5px;
+      padding: 8px 10px;
+      margin-top: 8px;
+      border-radius: 4px;
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      border: 1px solid var(--accent);
+      color: var(--ink);
+    }
+
+    /* Lista chip compatte (NON una riga piena per ricevitore) */
+    #manual-receivers-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    #manual-receivers-list .manual-receiver-row {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    /* Larghezza giusto per R1..R5; si espande al focus per label personalizzate.
    Selettore id-scoped → batte .tool-panel-section input (width:100%). */
-#manual-receivers-list .mr-label-input {
-  width: 42px; height: 24px; font-size: 12px; padding: 3px 5px;
-  background: var(--bg); color: var(--ink);
-  border: 1px solid var(--line); border-radius: 4px;
-}
-#manual-receivers-list .mr-label-input:focus {
-  width: 150px; outline: none; border-color: var(--accent);
-}
-#manual-receivers-list .mr-delete-btn {
-  flex-shrink: 0; padding: 3px 6px; font-size: 12px; line-height: 1;
-  height: 24px; background: transparent; color: var(--ink-2);
-  border: 1px solid var(--line); border-radius: 4px; cursor: pointer;
-}
-#manual-receivers-list .mr-delete-btn:hover {
-  border-color: #d8302a; color: #d8302a;
-}
+    #manual-receivers-list .mr-label-input {
+      width: 42px;
+      height: 24px;
+      font-size: 12px;
+      padding: 3px 5px;
+      background: var(--bg);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+    }
 
-/* Marker: pin QUADRATO con punta — volutamente NON circolare per non
+    #manual-receivers-list .mr-label-input:focus {
+      width: 150px;
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    #manual-receivers-list .mr-delete-btn {
+      flex-shrink: 0;
+      padding: 3px 6px;
+      font-size: 12px;
+      line-height: 1;
+      height: 24px;
+      background: transparent;
+      color: var(--ink-2);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #manual-receivers-list .mr-delete-btn:hover {
+      border-color: #d8302a;
+      color: #d8302a;
+    }
+
+    /* Marker: pin QUADRATO con punta — volutamente NON circolare per non
    confondersi col dot tondo della geolocalizzazione né coi marker
    tondi della griglia. */
-.manual-receiver-marker .mr-pin {
-  position: relative;
-  display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px;
-  background: #00bcd4; color: #fff;
-  font-family: var(--f-mono); font-size: 11px; font-weight: 700;
-  border: 2px solid #fff; border-radius: 6px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-}
-.manual-receiver-marker .mr-pin::after {
-  content: ''; position: absolute; left: 50%; bottom: -9px;
-  transform: translateX(-50%);
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 9px solid #fff;
-}
+    .manual-receiver-marker .mr-pin {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: #00bcd4;
+      color: #fff;
+      font-family: var(--f-mono);
+      font-size: 11px;
+      font-weight: 700;
+      border: 2px solid #fff;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    }
 
-.manual-table-title {
-  font-family: var(--f-mono); font-size: 12px;
-  text-transform: uppercase; letter-spacing: 0.08em;
-  color: var(--ink-2); margin: 0 0 12px;
-}
-.manual-receivers-table {
-  width: 100%; border-collapse: collapse; font-size: 13px;
-}
-.manual-receivers-table th,
-.manual-receivers-table td {
-  text-align: left; padding: 8px 10px;
-  border-bottom: 1px solid var(--line);
-}
-.manual-receivers-table th {
-  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
-}
-.manual-receivers-table tbody tr:last-child td { border-bottom: none; }
-.manual-receivers-table .diff-tag {
-  font-family: var(--f-mono); font-size: 10px;
-  padding: 2px 6px; margin-left: 4px; border-radius: 3px;
-  background: color-mix(in srgb, var(--accent) 15%, transparent);
-}
-.manual-receivers-table .status-ok { color: #28a745; font-weight: 600; }
-.manual-receivers-table .status-over { color: #d8302a; font-weight: 600; }
-.manual-receivers-table .status-none { color: var(--muted); }
-</style>
+    .manual-receiver-marker .mr-pin::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: -9px;
+      transform: translateX(-50%);
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 9px solid #fff;
+    }
+
+    .manual-table-title {
+      font-family: var(--f-mono);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-2);
+      margin: 0 0 12px;
+    }
+
+    .manual-receivers-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .manual-receivers-table th,
+    .manual-receivers-table td {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .manual-receivers-table th {
+      font-family: var(--f-mono);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+
+    .manual-receivers-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .manual-receivers-table .diff-tag {
+      font-family: var(--f-mono);
+      font-size: 10px;
+      padding: 2px 6px;
+      margin-left: 4px;
+      border-radius: 3px;
+      background: color-mix(in srgb, var(--accent) 15%, transparent);
+    }
+
+    .manual-receivers-table .status-ok {
+      color: #28a745;
+      font-weight: 600;
+    }
+
+    .manual-receivers-table .status-over {
+      color: #d8302a;
+      font-weight: 600;
+    }
+
+    .manual-receivers-table .status-none {
+      color: var(--muted);
+    }
+  </style>
 </head>
+
 <body>
 
-<header class="header-mock">
-  <div class="container header-mock-inner">
-    <div class="breadcrumb">
-      <a href="https://stline.it" target="_blank" rel="noopener">ST-LINE</a>
-      <span class="sep">/</span>
+  <header class="header-mock">
+    <div class="container header-mock-inner">
+      <div class="breadcrumb">
+        <a href="https://stline.it" target="_blank" rel="noopener">ST-LINE</a>
+        <span class="sep">/</span>
+        <a href="https://stline.it/open-lab" target="_blank" rel="noopener"
+          data-i18n-text="breadcrumbTools">Strumenti</a>
+        <span class="sep">/</span>
+        <span data-i18n-text="breadcrumbHere">Calcolo barriere</span>
+      </div>
+      <div class="header-actions">
+        <button class="theme-toggle" id="theme-toggle" type="button">&#9728; light</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="container bc-top">
+    <nav class="bc-breadcrumb" aria-label="Breadcrumb">
       <a href="https://stline.it/open-lab" target="_blank" rel="noopener" data-i18n-text="breadcrumbTools">Strumenti</a>
-      <span class="sep">/</span>
-      <span data-i18n-text="breadcrumbHere">Calcolo barriere</span>
-    </div>
-    <div class="header-actions">
-      <button class="theme-toggle" id="theme-toggle" type="button">&#9728; light</button>
-    </div>
-  </div>
-</header>
+      <span class="sep">&rsaquo;</span>
+      <span aria-current="page" data-i18n-text="breadcrumbHere">Calcolo barriere</span>
+    </nav>
+  </section>
 
-<section class="container bc-top">
-  <nav class="bc-breadcrumb" aria-label="Breadcrumb">
-    <a href="https://stline.it/open-lab" target="_blank" rel="noopener" data-i18n-text="breadcrumbTools">Strumenti</a>
-    <span class="sep">&rsaquo;</span>
-    <span aria-current="page" data-i18n-text="breadcrumbHere">Calcolo barriere</span>
-  </nav>
-</section>
+  <section class="bc-hero">
+    <div class="container">
+      <p class="eyebrow bc-eyebrow"><span class="dot" aria-hidden="true"></span><span data-i18n-text="heroEyebrow">OPEN
+          LAB · ACUSTICA</span></p>
+      <h1 class="bc-h1" id="bc-h1"></h1>
+      <p class="hero-sub" data-i18n-text="heroSub"></p>
+      <div class="hero-meta">
+        <span class="tag beta">PROTO · v0.9.2</span>
+        <span class="tag">ISO 9613-2 §7.4</span>
+        <span class="tag">Maekawa</span>
+        <span class="tag">Insertion Loss</span>
+      </div>
+    </div>
+  </section>
 
-<section class="bc-hero">
   <div class="container">
-    <p class="eyebrow bc-eyebrow"><span class="dot" aria-hidden="true"></span><span data-i18n-text="heroEyebrow">OPEN LAB · ACUSTICA</span></p>
-    <h1 class="bc-h1" id="bc-h1"></h1>
-    <p class="hero-sub" data-i18n-text="heroSub"></p>
-    <div class="hero-meta">
-      <span class="tag beta">PROTO · v0.8</span>
-      <span class="tag">ISO 9613-2 §7.4</span>
-      <span class="tag">Maekawa</span>
-      <span class="tag">Insertion Loss</span>
-    </div>
-  </div>
-</section>
-
-<div class="container">
-  <div class="tool-layout">
-    <div class="tool-map map-area barrier-calc-map">
-      <div class="grid-toggle" id="grid-toggle" data-i18n-text="gridToggle">&#9638; Griglia 5m</div>
-      <div class="fab-hint" id="fab-hint" data-i18n-text="fabHintInitial"></div>
-      <div class="status-bar" id="status-bar"></div>
-      <div id="map"></div>
-      <div class="legend">
-        <div class="legend-title" id="legend-title">Insertion Loss (dB)</div>
-        <div class="legend-scale"><div class="legend-gradient" id="legend-gradient"></div></div>
-        <div class="legend-labels" id="legend-labels">
-          <span>0</span><span>5</span><span>10</span><span>15+</span>
+    <div class="tool-layout">
+      <div class="tool-map map-area barrier-calc-map">
+        <div class="grid-toggle" id="grid-toggle" data-i18n-text="gridToggle">&#9638; Griglia 5m</div>
+        <div class="fab-hint" id="fab-hint" data-i18n-text="fabHintInitial"></div>
+        <div class="status-bar" id="status-bar"></div>
+        <div id="map"></div>
+        <div class="legend">
+          <div class="legend-title" id="legend-title">Insertion Loss (dB)</div>
+          <div class="legend-scale">
+            <div class="legend-gradient" id="legend-gradient"></div>
+          </div>
+          <div class="legend-labels" id="legend-labels">
+            <span>0</span><span>5</span><span>10</span><span>15+</span>
+          </div>
+        </div>
+        <div class="cursor-readout" id="cursor-readout">
+          <div class="label" data-i18n-text="cursorReadoutLabel"></div>
+          <div class="row"><span class="k" data-i18n-text="crLeqNo"></span><span class="v" id="cr-no">&mdash;</span>
+          </div>
+          <div class="row"><span class="k" data-i18n-text="crLeqW"></span><span class="v" id="cr-w">&mdash;</span></div>
+          <div class="row il-row"><span class="k">Insertion Loss</span><span class="v" id="cr-il">&mdash;</span></div>
+          <div class="row"><span class="k" data-i18n-text="crDist"></span><span class="v" id="cr-dist">&mdash;</span>
+          </div>
+        </div>
+        <div class="calc-spinner" id="calc-spinner">
+          <div class="spinner-ring"></div>
+          <div class="spinner-label" data-i18n-text="spinnerLabel"></div>
+          <div class="spinner-progress" id="spinner-progress">0%</div>
+          <div class="spinner-detail" id="spinner-detail">&mdash;</div>
         </div>
       </div>
-      <div class="cursor-readout" id="cursor-readout">
-        <div class="label" data-i18n-text="cursorReadoutLabel"></div>
-        <div class="row"><span class="k" data-i18n-text="crLeqNo"></span><span class="v" id="cr-no">&mdash;</span></div>
-        <div class="row"><span class="k" data-i18n-text="crLeqW"></span><span class="v" id="cr-w">&mdash;</span></div>
-        <div class="row il-row"><span class="k">Insertion Loss</span><span class="v" id="cr-il">&mdash;</span></div>
-        <div class="row"><span class="k" data-i18n-text="crDist"></span><span class="v" id="cr-dist">&mdash;</span></div>
-      </div>
-      <div class="calc-spinner" id="calc-spinner">
-        <div class="spinner-ring"></div>
-        <div class="spinner-label" data-i18n-text="spinnerLabel"></div>
-        <div class="spinner-progress" id="spinner-progress">0%</div>
-        <div class="spinner-detail" id="spinner-detail">&mdash;</div>
-      </div>
-    </div>
-    <div class="tool-panel">
-      <div class="tool-panel-grid barrier-calc-grid">
+      <div class="tool-panel">
+        <div class="tool-panel-grid barrier-calc-grid">
 
-      <div class="tool-panel-section">
-        <h3 class="panel-title" data-i18n-text="s1Title"></h3>
-        <div class="mode-toggle">
-          <button id="mode-line" class="active" data-i18n-text="modeLine"></button>
-          <button id="mode-area" data-i18n-text="modeArea"></button>
-          <button id="mode-point" data-i18n-text="modePoint"></button>
-        </div>
-        <p style="font-size:11px;color:var(--ink-2);margin:0 0 10px;font-family:var(--f-mono)" id="mode-hint"></p>
-
-        <label class="panel-label" data-i18n-text="spectrumLabel"></label>
-        <div class="spectrum-info-wrap">
-          <select id="src-spectrum">
-            <option value="urban_road" selected data-i18n-text="specUrban"></option>
-            <option value="extraurban_road" data-i18n-text="specExtraurban"></option>
-            <option value="highway" data-i18n-text="specHighway"></option>
-            <option value="train_pass" data-i18n-text="specTrainPass"></option>
-            <option value="train_freight" data-i18n-text="specTrainFreight"></option>
-            <option value="industrial" data-i18n-text="specIndustrial"></option>
-          </select>
-          <button type="button" class="info-btn" id="btn-spectrum-info"
-            aria-expanded="false" aria-controls="spectrum-info-popover">&#9432;</button>
-          <div class="info-popover" id="spectrum-info-popover" role="dialog" aria-modal="false" hidden>
-            <button type="button" class="info-popover-close">&times;</button>
-            <h4 class="info-popover-title" id="info-popover-title"></h4>
-            <p class="info-popover-desc" id="info-popover-desc"></p>
-            <div class="info-popover-formula">
-              <span class="formula-label" data-i18n-text="formula"></span>
-              <code id="info-popover-formula"></code>
+          <div class="tool-panel-section">
+            <h3 class="panel-title" data-i18n-text="s1Title"></h3>
+            <div class="mode-toggle">
+              <button id="mode-line" class="active" data-i18n-text="modeLine"></button>
+              <button id="mode-area" data-i18n-text="modeArea"></button>
+              <button id="mode-point" data-i18n-text="modePoint"></button>
             </div>
-            <div class="info-popover-spectrum">
-              <span class="spectrum-label" data-i18n-text="spectrumOctave"></span>
-              <canvas id="spectrum-canvas" width="240" height="100"></canvas>
-            </div>
-          </div>
-        </div>
+            <p style="font-size:11px;color:var(--ink-2);margin:0 0 10px;font-family:var(--f-mono)" id="mode-hint"></p>
 
-        <div class="input-row" style="margin-top:10px">
-          <div id="lw-line-wrap">
-            <label class="panel-label">L<sub>w</sub>' (dB/m)</label>
-            <input type="number" id="lw-line" value="70" min="40" max="100" step="1">
-          </div>
-          <div id="lw-area-wrap" style="display:none">
-            <label class="panel-label">L<sub>w</sub>'' (dB/m&sup2;)</label>
-            <input type="number" id="lw-area" value="55" min="30" max="90" step="1">
-          </div>
-          <div id="lw-point-wrap" style="display:none">
-            <label class="panel-label" id="lw-point-label" data-i18n-html="lwPointLabel"></label>
-            <input type="number" id="lw-point" value="105" min="50" max="150" step="1">
-          </div>
-          <div>
-            <label class="panel-label">h<sub>s</sub> (m)</label>
-            <input type="number" id="src-h" value="0.5" min="0.1" max="20" step="0.1">
-          </div>
-        </div>
-      </div>
-
-      <div class="tool-panel-section">
-        <h3 class="panel-title" data-i18n-text="s2Title"></h3>
-        <div class="draw-status" id="src-status"></div>
-        <button class="btn secondary" id="btn-draw-src" data-i18n-text="drawOnMap"></button>
-        <button class="btn secondary" id="btn-clear-src" data-i18n-text="clearSource"></button>
-        <p style="font-size:10.5px;color:var(--ink-2);margin:6px 0 0;font-family:var(--f-mono)" id="draw-help" data-i18n-html="drawHelp"></p>
-      </div>
-
-      <div class="tool-panel-section">
-        <h3 class="panel-title" data-i18n-text="s3Title"></h3>
-        <div class="draw-status" id="barrier-status"></div>
-        <div class="input-row">
-          <div>
-            <label class="panel-label" data-i18n-text="barrierHLabel"></label>
-            <input type="number" id="barrier-h" value="3" min="0.5" max="15" step="0.5">
-          </div>
-          <div>
-            <label class="panel-label" data-i18n-text="barrierBaseLabel"></label>
-            <input type="number" id="barrier-base" value="0" min="0" max="10" step="0.5">
-          </div>
-        </div>
-        <button class="btn secondary" id="btn-draw-barrier" data-i18n-text="drawOnMap"></button>
-        <button class="btn secondary" id="btn-clear-barrier" data-i18n-text="clearBarrier"></button>
-      </div>
-
-      <div class="tool-panel-section">
-        <h3 class="panel-title" data-i18n-text="s3bTitle"></h3>
-        <div class="method-toggle" id="method-toggle">
-          <label data-method="iso9613" class="checked">
-            <input type="radio" name="method" value="iso9613" checked>
-            <div class="method-info">
-              <div class="method-name">ISO 9613-2 §7.4</div>
-              <div class="method-desc" data-i18n-html="methodIsoDesc"></div>
-            </div>
-          </label>
-          <label data-method="maekawa">
-            <input type="radio" name="method" value="maekawa">
-            <div class="method-info">
-              <div class="method-name">Maekawa (1968)</div>
-              <div class="method-desc" data-i18n-text="methodMaekawaDesc"></div>
-            </div>
-          </label>
-        </div>
-      </div>
-
-      <div class="tool-panel-section">
-        <h3 class="panel-title" data-i18n-text="s4Title"></h3>
-        <div class="input-row">
-          <div>
-            <label class="panel-label">h<sub>r</sub> (m)</label>
-            <input type="number" id="rec-h" value="4" min="0.5" max="30" step="0.5">
-          </div>
-          <div>
-            <label class="panel-label" data-i18n-text="gridBufferLabel"></label>
-            <input type="number" id="grid-buffer" value="150" min="25" max="500" step="25">
-          </div>
-        </div>
-        <div class="input-row">
-          <div>
-            <label class="panel-label" data-i18n-text="gridStepLabel"></label>
-            <input type="number" id="grid-step" value="15" min="5" max="50" step="5">
-          </div>
-          <div>
-            <label class="panel-label" data-i18n-text="groundGLabel"></label>
-            <input type="number" id="ground-G" value="0.5" min="0" max="1" step="0.1">
-          </div>
-        </div>
-      </div>
-
-      <div class="tool-panel-section">
-        <h3 class="panel-title" data-i18n-text="s5Title"></h3>
-        <div class="input-row">
-          <div>
-            <label class="panel-label">T (&deg;C)</label>
-            <input type="number" id="atm-T" value="15" min="-20" max="40">
-          </div>
-          <div>
-            <label class="panel-label">RH (%)</label>
-            <input type="number" id="atm-RH" value="70" min="10" max="100">
-          </div>
-        </div>
-      </div>
-
-      <div class="tool-panel-section">
-        <h3 class="panel-title" data-i18n-text="s6Title"></h3>
-        <label class="panel-label" data-i18n-text="classLabel"></label>
-        <select id="class-norm">
-          <option value="" data-i18n-text="classNone"></option>
-          <option value="I:50" data-i18n-text="classI"></option>
-          <option value="II:55" data-i18n-text="classII"></option>
-          <option value="III:60" selected data-i18n-text="classIII"></option>
-          <option value="IV:65" data-i18n-text="classIV"></option>
-          <option value="V:70" data-i18n-text="classV"></option>
-          <option value="VI:70" data-i18n-text="classVI"></option>
-        </select>
-        <p style="font-size:10.5px;color:var(--ink-2);margin:6px 0 0;font-family:var(--f-mono)" data-i18n-text="classNote"></p>
-      </div>
-
-      <div class="tool-panel-section">
-        <h3 class="panel-title" data-i18n-text="s8Title"></h3>
-        <label class="panel-label" data-i18n-text="bldDefaultHLabel"></label>
-        <input type="number" id="bld-default-h" value="9" min="3" max="40" step="1" style="margin-bottom:8px">
-        <button class="btn secondary" id="btn-load-buildings" data-i18n-text="loadBuildings"></button>
-        <p id="building-status" style="font-family:var(--f-mono);font-size:10.5px;color:var(--ink-2);margin:8px 0 0;line-height:1.5"></p>
-        <label class="checkbox-row" style="margin-top:8px">
-          <input type="checkbox" id="show-buildings"> <span data-i18n-text="showBuildings"></span>
-        </label>
-        <label class="checkbox-row">
-          <input type="checkbox" id="buildings-affect-calc"> <span data-i18n-text="buildingsAffectCalc"></span>
-        </label>
-        <div class="participation-badge" id="participation-badge" style="display:none">
-          <span class="participation-count" id="participation-count">&mdash;</span>
-          <span class="participation-label" data-i18n-text="buildingsInScene"></span>
-        </div>
-        <p style="font-size:10.5px;color:var(--ink-2);margin:6px 0 0;font-family:var(--f-mono);line-height:1.5" data-i18n-text="worstScreenHelp"></p>
-      </div>
-
-      <div class="tool-panel-section">
-        <h3 class="panel-title" data-i18n-text="s7Title"></h3>
-        <label class="panel-label" data-i18n-text="viewModeLabel"></label>
-        <select id="view-mode" style="margin-bottom:8px">
-          <option value="il" selected>Insertion Loss (IL)</option>
-          <option value="with" data-i18n-text="viewWith"></option>
-          <option value="without" data-i18n-text="viewWithout"></option>
-        </select>
-        <label class="checkbox-row">
-          <input type="checkbox" id="show-bands" checked> <span data-i18n-text="showBands"></span>
-        </label>
-        <label class="checkbox-row">
-          <input type="checkbox" id="show-isolines" checked> <span data-i18n-text="showIsolines"></span>
-        </label>
-        <label class="checkbox-row">
-          <input type="checkbox" id="show-grid"> <span data-i18n-text="showGrid"></span>
-        </label>
-        <label class="checkbox-row">
-          <input type="checkbox" id="show-metric-grid"> <span data-i18n-text="showMetricGrid"></span>
-        </label>
-        <label class="checkbox-row">
-          <input type="checkbox" id="show-osm" checked> <span data-i18n-text="showOsm"></span>
-        </label>
-      </div>
-
-      <div class="tool-panel-section">
-        <h3 class="panel-title" data-i18n-text="s9Title"></h3>
-        <p class="panel-helper" data-i18n-text="s9Helper"></p>
-        <button class="btn secondary" id="btn-add-manual-receiver" style="margin-bottom:8px" data-i18n-text="btnAddManualReceiver"></button>
-        <div id="manual-receivers-list"></div>
-        <button class="btn ghost" id="btn-clear-all-manual" style="display:none;margin-top:6px" data-i18n-text="btnClearAllManual"></button>
-        <div id="manual-pick-status" class="pick-status" style="display:none" data-i18n-text="pickStatusActive"></div>
-      </div>
-
-      <div class="tool-panel-section">
-        <div class="calc-cell">
-          <button class="btn" id="btn-calc" data-i18n-text="btnCalc"></button>
-          <button class="btn danger" id="btn-reset" data-i18n-text="btnReset"></button>
-        </div>
-        <p id="calc-status" style="font-family:var(--f-mono);font-size:11px;color:var(--ink-2);margin:6px 0 0;text-align:center"></p>
-      </div>
-
-      <div class="tool-panel-section span-2" id="bc-results">
-        <h3 class="panel-title" data-i18n-text="resultsTitle"></h3>
-        <section class="results-explainer">
-          <h4 class="results-explainer-title" data-i18n-text="resultsExplainerTitle"></h4>
-          <p class="results-explainer-text" data-i18n-html="resultsExplainerText"></p>
-        </section>
-        <div class="bc-results-flex">
-          <div class="bc-stats-col">
-            <div class="stats-grid">
-              <div class="stat-box">
-                <div class="stat-label" data-i18n-text="statILMean"></div>
-                <div class="stat-value" id="stat-il-mean">&mdash;</div>
-                <div class="stat-sublabel" data-i18n-text="statILMeanSub"></div>
-              </div>
-              <div class="stat-box">
-                <div class="stat-label" data-i18n-text="statILMax"></div>
-                <div class="stat-value good" id="stat-il-max">&mdash;</div>
-                <div class="stat-sublabel" data-i18n-text="statILMaxSub"></div>
-              </div>
-              <div class="stat-box">
-                <div class="stat-label" data-i18n-text="statLeqWith"></div>
-                <div class="stat-value" id="stat-leq-with">&mdash;</div>
-                <div class="stat-sublabel" data-i18n-text="statLeqWithSub"></div>
-              </div>
-              <div class="stat-box">
-                <div class="stat-label" data-i18n-text="statBelow"></div>
-                <div class="stat-value" id="stat-below">&mdash;</div>
-                <div class="stat-sublabel" data-i18n-text="statBelowSub"></div>
+            <label class="panel-label" data-i18n-text="spectrumLabel"></label>
+            <div class="spectrum-info-wrap">
+              <select id="src-spectrum">
+                <option value="urban_road" selected data-i18n-text="specUrban"></option>
+                <option value="extraurban_road" data-i18n-text="specExtraurban"></option>
+                <option value="highway" data-i18n-text="specHighway"></option>
+                <option value="train_pass" data-i18n-text="specTrainPass"></option>
+                <option value="train_freight" data-i18n-text="specTrainFreight"></option>
+                <option value="industrial" data-i18n-text="specIndustrial"></option>
+              </select>
+              <button type="button" class="info-btn" id="btn-spectrum-info" aria-expanded="false"
+                aria-controls="spectrum-info-popover">&#9432;</button>
+              <div class="info-popover" id="spectrum-info-popover" role="dialog" aria-modal="false" hidden>
+                <button type="button" class="info-popover-close">&times;</button>
+                <h4 class="info-popover-title" id="info-popover-title"></h4>
+                <p class="info-popover-desc" id="info-popover-desc"></p>
+                <div class="info-popover-formula">
+                  <span class="formula-label" data-i18n-text="formula"></span>
+                  <code id="info-popover-formula"></code>
+                </div>
+                <div class="info-popover-spectrum">
+                  <span class="spectrum-label" data-i18n-text="spectrumOctave"></span>
+                  <canvas id="spectrum-canvas" width="240" height="100"></canvas>
+                </div>
               </div>
             </div>
-            <div class="stat-row stat-row-diffracted">
-              <div class="stat-box stat-box-diff">
-                <div class="stat-label" data-i18n-text="statILMeanDiff"></div>
-                <div class="stat-value" id="stat-il-mean-diff">&mdash;</div>
-                <div class="stat-sublabel" data-i18n-text="statILMeanDiffSub"></div>
+
+            <div class="input-row" style="margin-top:10px">
+              <div id="lw-line-wrap">
+                <label class="panel-label">L<sub>w</sub>' (dB/m)</label>
+                <input type="number" id="lw-line" value="70" min="40" max="100" step="1">
               </div>
-              <div class="stat-box stat-box-diff">
-                <div class="stat-label" data-i18n-text="statILMaxDiff"></div>
-                <div class="stat-value good" id="stat-il-max-diff">&mdash;</div>
-                <div class="stat-sublabel" data-i18n-text="statILMaxDiffSub"></div>
+              <div id="lw-area-wrap" style="display:none">
+                <label class="panel-label">L<sub>w</sub>'' (dB/m&sup2;)</label>
+                <input type="number" id="lw-area" value="55" min="30" max="90" step="1">
               </div>
-              <div class="stat-box stat-box-diff">
-                <div class="stat-label" data-i18n-text="statNDiff"></div>
-                <div class="stat-value" id="stat-n-diff">&mdash;</div>
-                <div class="stat-sublabel" data-i18n-text="statNDiffSub"></div>
+              <div id="lw-point-wrap" style="display:none">
+                <label class="panel-label" id="lw-point-label" data-i18n-html="lwPointLabel"></label>
+                <input type="number" id="lw-point" value="105" min="50" max="150" step="1">
+              </div>
+              <div>
+                <label class="panel-label">h<sub>s</sub> (m)</label>
+                <input type="number" id="src-h" value="0.5" min="0.1" max="20" step="0.1">
               </div>
             </div>
           </div>
-          <div class="manual-receivers-table-wrap" id="manual-receivers-table-wrap" style="display:none">
-            <h4 class="manual-table-title" data-i18n-text="manualTableTitle"></h4>
-            <table class="manual-receivers-table">
-              <thead>
-                <tr>
-                  <th data-i18n-text="manualTableColLabel"></th>
-                  <th data-i18n-text="manualTableColDist"></th>
-                  <th data-i18n-text="manualTableColLeqNo"></th>
-                  <th data-i18n-text="manualTableColLeqW"></th>
-                  <th data-i18n-text="manualTableColIL"></th>
-                  <th data-i18n-text="manualTableColStatus"></th>
-                </tr>
-              </thead>
-              <tbody id="manual-receivers-tbody"></tbody>
-            </table>
+
+          <div class="tool-panel-section">
+            <h3 class="panel-title" data-i18n-text="s2Title"></h3>
+            <div class="draw-status" id="src-status"></div>
+            <button class="btn secondary" id="btn-draw-src" data-i18n-text="drawOnMap"></button>
+            <button class="btn secondary" id="btn-clear-src" data-i18n-text="clearSource"></button>
+            <p style="font-size:10.5px;color:var(--ink-2);margin:6px 0 0;font-family:var(--f-mono)" id="draw-help"
+              data-i18n-html="drawHelp"></p>
           </div>
+
+          <div class="tool-panel-section">
+            <h3 class="panel-title" data-i18n-text="s3Title"></h3>
+            <div class="draw-status" id="barrier-status"></div>
+            <div class="input-row">
+              <div>
+                <label class="panel-label" data-i18n-text="barrierHLabel"></label>
+                <input type="number" id="barrier-h" value="3" min="0.5" max="15" step="0.5">
+              </div>
+              <div>
+                <label class="panel-label" data-i18n-text="barrierBaseLabel"></label>
+                <input type="number" id="barrier-base" value="0" min="0" max="10" step="0.5">
+              </div>
+            </div>
+            <button class="btn secondary" id="btn-draw-barrier" data-i18n-text="drawOnMap"></button>
+            <button class="btn secondary" id="btn-clear-barrier" data-i18n-text="clearBarrier"></button>
+          </div>
+
+          <div class="tool-panel-section">
+            <h3 class="panel-title" data-i18n-text="s3bTitle"></h3>
+            <div class="method-toggle" id="method-toggle">
+              <label data-method="iso9613" class="checked">
+                <input type="radio" name="method" value="iso9613" checked>
+                <div class="method-info">
+                  <div class="method-name">ISO 9613-2 §7.4</div>
+                  <div class="method-desc" data-i18n-html="methodIsoDesc"></div>
+                </div>
+              </label>
+              <label data-method="maekawa">
+                <input type="radio" name="method" value="maekawa">
+                <div class="method-info">
+                  <div class="method-name">Maekawa (1968)</div>
+                  <div class="method-desc" data-i18n-text="methodMaekawaDesc"></div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="tool-panel-section">
+            <h3 class="panel-title" data-i18n-text="s4Title"></h3>
+            <div class="input-row">
+              <div>
+                <label class="panel-label">h<sub>r</sub> (m)</label>
+                <input type="number" id="rec-h" value="4" min="0.5" max="30" step="0.5">
+              </div>
+              <div>
+                <label class="panel-label" data-i18n-text="gridBufferLabel"></label>
+                <input type="number" id="grid-buffer" value="150" min="25" max="500" step="25">
+              </div>
+            </div>
+            <div class="input-row">
+              <div>
+                <label class="panel-label" data-i18n-text="gridStepLabel"></label>
+                <input type="number" id="grid-step" value="15" min="5" max="50" step="5">
+              </div>
+              <div>
+                <label class="panel-label" data-i18n-text="groundGLabel"></label>
+                <input type="number" id="ground-G" value="0.5" min="0" max="1" step="0.1">
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-panel-section">
+            <h3 class="panel-title" data-i18n-text="s5Title"></h3>
+            <div class="input-row">
+              <div>
+                <label class="panel-label">T (&deg;C)</label>
+                <input type="number" id="atm-T" value="15" min="-20" max="40">
+              </div>
+              <div>
+                <label class="panel-label">RH (%)</label>
+                <input type="number" id="atm-RH" value="70" min="10" max="100">
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-panel-section">
+            <h3 class="panel-title" data-i18n-text="s6Title"></h3>
+            <label class="panel-label" data-i18n-text="classLabel"></label>
+            <select id="class-norm">
+              <option value="" data-i18n-text="classNone"></option>
+              <option value="I:50" data-i18n-text="classI"></option>
+              <option value="II:55" data-i18n-text="classII"></option>
+              <option value="III:60" selected data-i18n-text="classIII"></option>
+              <option value="IV:65" data-i18n-text="classIV"></option>
+              <option value="V:70" data-i18n-text="classV"></option>
+              <option value="VI:70" data-i18n-text="classVI"></option>
+            </select>
+            <p style="font-size:10.5px;color:var(--ink-2);margin:6px 0 0;font-family:var(--f-mono)"
+              data-i18n-text="classNote"></p>
+          </div>
+
+          <div class="tool-panel-section">
+            <h3 class="panel-title" data-i18n-text="s8Title"></h3>
+            <label class="panel-label" data-i18n-text="bldDefaultHLabel"></label>
+            <input type="number" id="bld-default-h" value="9" min="3" max="40" step="1" style="margin-bottom:8px">
+            <button class="btn secondary" id="btn-load-buildings" data-i18n-text="loadBuildings"></button>
+            <p id="building-status"
+              style="font-family:var(--f-mono);font-size:10.5px;color:var(--ink-2);margin:8px 0 0;line-height:1.5"></p>
+            <label class="checkbox-row" style="margin-top:8px">
+              <input type="checkbox" id="show-buildings"> <span data-i18n-text="showBuildings"></span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="buildings-affect-calc"> <span data-i18n-text="buildingsAffectCalc"></span>
+            </label>
+            <div class="participation-badge" id="participation-badge" style="display:none">
+              <span class="participation-count" id="participation-count">&mdash;</span>
+              <span class="participation-label" data-i18n-text="buildingsInScene"></span>
+            </div>
+            <p style="font-size:10.5px;color:var(--ink-2);margin:6px 0 0;font-family:var(--f-mono);line-height:1.5"
+              data-i18n-text="worstScreenHelp"></p>
+          </div>
+
+          <div class="tool-panel-section">
+            <h3 class="panel-title" data-i18n-text="s7Title"></h3>
+            <label class="panel-label" data-i18n-text="viewModeLabel"></label>
+            <select id="view-mode" style="margin-bottom:8px">
+              <option value="il" selected>Insertion Loss (IL)</option>
+              <option value="with" data-i18n-text="viewWith"></option>
+              <option value="without" data-i18n-text="viewWithout"></option>
+            </select>
+            <label class="checkbox-row">
+              <input type="checkbox" id="show-bands" checked> <span data-i18n-text="showBands"></span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="show-isolines" checked> <span data-i18n-text="showIsolines"></span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="show-grid"> <span data-i18n-text="showGrid"></span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="show-metric-grid"> <span data-i18n-text="showMetricGrid"></span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="show-osm" checked> <span data-i18n-text="showOsm"></span>
+            </label>
+          </div>
+
+          <div class="tool-panel-section">
+            <h3 class="panel-title" data-i18n-text="s9Title"></h3>
+            <p class="panel-helper" data-i18n-text="s9Helper"></p>
+            <button class="btn secondary" id="btn-add-manual-receiver" style="margin-bottom:8px"
+              data-i18n-text="btnAddManualReceiver"></button>
+            <div id="manual-receivers-list"></div>
+            <button class="btn ghost" id="btn-clear-all-manual" style="display:none;margin-top:6px"
+              data-i18n-text="btnClearAllManual"></button>
+            <div id="manual-pick-status" class="pick-status" style="display:none" data-i18n-text="pickStatusActive">
+            </div>
+          </div>
+
+          <div class="tool-panel-section">
+            <div class="calc-cell">
+              <button class="btn" id="btn-calc" data-i18n-text="btnCalc"></button>
+              <button class="btn danger" id="btn-reset" data-i18n-text="btnReset"></button>
+            </div>
+            <p id="calc-status"
+              style="font-family:var(--f-mono);font-size:11px;color:var(--ink-2);margin:6px 0 0;text-align:center"></p>
+          </div>
+
+          <div class="tool-panel-section span-2" id="bc-results">
+            <h3 class="panel-title" data-i18n-text="resultsTitle"></h3>
+            <section class="results-explainer">
+              <h4 class="results-explainer-title" data-i18n-text="resultsExplainerTitle"></h4>
+              <p class="results-explainer-text" data-i18n-html="resultsExplainerText"></p>
+            </section>
+            <div class="bc-results-flex">
+              <div class="bc-stats-col">
+                <div class="stats-grid">
+                  <div class="stat-box">
+                    <div class="stat-label" data-i18n-text="statILMean"></div>
+                    <div class="stat-value" id="stat-il-mean">&mdash;</div>
+                    <div class="stat-sublabel" data-i18n-text="statILMeanSub"></div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="stat-label" data-i18n-text="statILMax"></div>
+                    <div class="stat-value good" id="stat-il-max">&mdash;</div>
+                    <div class="stat-sublabel" data-i18n-text="statILMaxSub"></div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="stat-label" data-i18n-text="statLeqWith"></div>
+                    <div class="stat-value" id="stat-leq-with">&mdash;</div>
+                    <div class="stat-sublabel" data-i18n-text="statLeqWithSub"></div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="stat-label" data-i18n-text="statBelow"></div>
+                    <div class="stat-value" id="stat-below">&mdash;</div>
+                    <div class="stat-sublabel" data-i18n-text="statBelowSub"></div>
+                  </div>
+                </div>
+                <div class="stat-row stat-row-diffracted">
+                  <div class="stat-box stat-box-diff">
+                    <div class="stat-label" data-i18n-text="statILMeanDiff"></div>
+                    <div class="stat-value" id="stat-il-mean-diff">&mdash;</div>
+                    <div class="stat-sublabel" data-i18n-text="statILMeanDiffSub"></div>
+                  </div>
+                  <div class="stat-box stat-box-diff">
+                    <div class="stat-label" data-i18n-text="statILMaxDiff"></div>
+                    <div class="stat-value good" id="stat-il-max-diff">&mdash;</div>
+                    <div class="stat-sublabel" data-i18n-text="statILMaxDiffSub"></div>
+                  </div>
+                  <div class="stat-box stat-box-diff">
+                    <div class="stat-label" data-i18n-text="statNDiff"></div>
+                    <div class="stat-value" id="stat-n-diff">&mdash;</div>
+                    <div class="stat-sublabel" data-i18n-text="statNDiffSub"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="manual-receivers-table-wrap" id="manual-receivers-table-wrap" style="display:none">
+                <h4 class="manual-table-title" data-i18n-text="manualTableTitle"></h4>
+                <table class="manual-receivers-table">
+                  <thead>
+                    <tr>
+                      <th data-i18n-text="manualTableColLabel"></th>
+                      <th data-i18n-text="manualTableColDist"></th>
+                      <th data-i18n-text="manualTableColLeqNo"></th>
+                      <th data-i18n-text="manualTableColLeqW"></th>
+                      <th data-i18n-text="manualTableColIL"></th>
+                      <th data-i18n-text="manualTableColStatus"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="manual-receivers-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-panel-section">
+            <h3 class="panel-title" data-i18n-text="toolsTitle"></h3>
+            <button class="btn secondary" id="btn-crosssection" disabled data-i18n-text="btnCrossSection"></button>
+            <button class="btn secondary" id="btn-export-csv" disabled style="margin-top:6px"
+              data-i18n-text="btnExportCsv"></button>
+            <p style="font-size:10.5px;color:var(--ink-2);margin:8px 0 0;font-family:var(--f-mono)"
+              data-i18n-text="toolsNote"></p>
+          </div>
+
         </div>
       </div>
+    </div>
 
-      <div class="tool-panel-section">
-        <h3 class="panel-title" data-i18n-text="toolsTitle"></h3>
-        <button class="btn secondary" id="btn-crosssection" disabled data-i18n-text="btnCrossSection"></button>
-        <button class="btn secondary" id="btn-export-csv" disabled style="margin-top:6px" data-i18n-text="btnExportCsv"></button>
-        <p style="font-size:10.5px;color:var(--ink-2);margin:8px 0 0;font-family:var(--f-mono)" data-i18n-text="toolsNote"></p>
+    <div class="crosssection-panel" id="crosssection-panel">
+      <div class="crosssection-header">
+        <h3 data-i18n-text="csTitle"></h3>
+        <div class="crosssection-meta" id="cs-meta">&mdash;</div>
+        <button class="crosssection-close" id="btn-close-cs" data-i18n-text="csClose"></button>
       </div>
-
+      <div class="crosssection-body">
+        <svg class="crosssection-svg" id="cs-svg" viewBox="0 0 800 320" preserveAspectRatio="xMidYMid meet"></svg>
       </div>
     </div>
   </div>
 
-  <div class="crosssection-panel" id="crosssection-panel">
-    <div class="crosssection-header">
-      <h3 data-i18n-text="csTitle"></h3>
-      <div class="crosssection-meta" id="cs-meta">&mdash;</div>
-      <button class="crosssection-close" id="btn-close-cs" data-i18n-text="csClose"></button>
+  <section class="disclaimer-strip">
+    <div class="container" id="disclaimer-box" data-i18n-html="disclaimer"></div>
+  </section>
+
+  <section class="cta-strip">
+    <div class="container cta-inner">
+      <div class="cta-text">
+        <small data-i18n-text="ctaSmall"></small>
+        <span data-i18n-text="ctaText"></span>
+      </div>
+      <a href="https://stline.it/prodotti/acustica-pro" id="cta-link" class="cta-btn" target="_blank" rel="noopener"
+        data-i18n-text="ctaBtn"></a>
     </div>
-    <div class="crosssection-body">
-      <svg class="crosssection-svg" id="cs-svg" viewBox="0 0 800 320" preserveAspectRatio="xMidYMid meet"></svg>
+  </section>
+
+  <section class="doc-section">
+    <div class="container">
+      <h2 data-i18n-text="docTitle"></h2>
+      <h3 data-i18n-text="docFlowTitle"></h3>
+      <ol data-i18n-html="docFlow"></ol>
+
+      <h3 data-i18n-text="docMethodTitle"></h3>
+      <p data-i18n-html="docMethodP1"></p>
+      <p data-i18n-html="docMethodP2"></p>
+      <p data-i18n-text="docMethodP3"></p>
+      <ul data-i18n-html="docMethodList"></ul>
+
+      <h3 data-i18n-text="docDiffTitle"></h3>
+      <p data-i18n-text="docDiffIntro"></p>
+      <p data-i18n-html="docDiffMaekawaH"></p>
+      <pre><code data-i18n-text="docDiffMaekawaPre"></code></pre>
+      <p data-i18n-html="docDiffMaekawaP"></p>
+      <p data-i18n-html="docDiffIsoH"></p>
+      <pre><code data-i18n-text="docDiffIsoPre"></code></pre>
+      <p data-i18n-html="docDiffIsoP"></p>
+      <p data-i18n-html="docDiffEquivP"></p>
+      <p data-i18n-html="docSumP"></p>
+
+      <h3 data-i18n-text="docRefTitle"></h3>
+      <ul data-i18n-html="docRefList"></ul>
+
+      <p class="doc-callout" data-i18n-html="docWorstScreen"></p>
+
+      <h3 data-i18n-text="docLimTitle"></h3>
+      <ul data-i18n-html="docLimList"></ul>
     </div>
-  </div>
-</div>
+  </section>
 
-<section class="disclaimer-strip">
-  <div class="container" id="disclaimer-box" data-i18n-html="disclaimer"></div>
-</section>
-
-<section class="cta-strip">
-  <div class="container cta-inner">
-    <div class="cta-text">
-      <small data-i18n-text="ctaSmall"></small>
-      <span data-i18n-text="ctaText"></span>
+  <footer class="app-footer">
+    <div class="container">
+      noise-barrier-calc v0.9.2 &middot; <a href="https://stline.it/open-lab" target="_blank" rel="noopener">ST-LINE Open
+        Lab</a>
+      &middot; Apache-2.0 &middot; ISO 9613-2:1996 §7.4 / Maekawa 1968
     </div>
-    <a href="https://stline.it/prodotti/acustica-pro" id="cta-link" class="cta-btn" target="_blank" rel="noopener" data-i18n-text="ctaBtn"></a>
-  </div>
-</section>
+  </footer>
 
-<section class="doc-section">
-  <div class="container">
-    <h2 data-i18n-text="docTitle"></h2>
-    <h3 data-i18n-text="docFlowTitle"></h3>
-    <ol data-i18n-html="docFlow"></ol>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/d3-contour@4.0.2/dist/d3-contour.min.js"></script>
 
-    <h3 data-i18n-text="docMethodTitle"></h3>
-    <p data-i18n-html="docMethodP1"></p>
-    <p data-i18n-html="docMethodP2"></p>
-    <p data-i18n-text="docMethodP3"></p>
-    <ul data-i18n-html="docMethodList"></ul>
-
-    <h3 data-i18n-text="docDiffTitle"></h3>
-    <p data-i18n-text="docDiffIntro"></p>
-    <p data-i18n-html="docDiffMaekawaH"></p>
-    <pre><code data-i18n-text="docDiffMaekawaPre"></code></pre>
-    <p data-i18n-html="docDiffMaekawaP"></p>
-    <p data-i18n-html="docDiffIsoH"></p>
-    <pre><code data-i18n-text="docDiffIsoPre"></code></pre>
-    <p data-i18n-html="docDiffIsoP"></p>
-    <p data-i18n-html="docDiffEquivP"></p>
-    <p data-i18n-html="docSumP"></p>
-
-    <h3 data-i18n-text="docRefTitle"></h3>
-    <ul data-i18n-html="docRefList"></ul>
-
-    <p class="doc-callout" data-i18n-html="docWorstScreen"></p>
-
-    <h3 data-i18n-text="docLimTitle"></h3>
-    <ul data-i18n-html="docLimList"></ul>
-  </div>
-</section>
-
-<footer class="app-footer">
-  <div class="container">
-    noise-barrier-calc v0.8 &middot; <a href="https://stline.it/open-lab" target="_blank" rel="noopener">ST-LINE Open Lab</a>
-    &middot; Apache-2.0 &middot; ISO 9613-2:1996 §7.4 / Maekawa 1968
-  </div>
-</footer>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/d3-contour@4.0.2/dist/d3-contour.min.js"></script>
-
-<script src="js/physics/constants.js"></script>
-<script src="js/physics/spectra.js"></script>
-<script src="js/physics/atm.js"></script>
-<script src="js/physics/ground.js"></script>
-<script src="js/physics/diffraction.js"></script>
-<script src="js/physics/geometry.js"></script>
-<script src="js/physics/propagation.js"></script>
-<script src="js/osm/buildings.js"></script>
-<script src="js/ui/screenshot.js"></script>
-<script src="js/i18n/strings.js"></script>
-<script src="js/i18n/runtime.js"></script>
-<script src="js/app.js"></script>
+  <script src="js/physics/constants.js"></script>
+  <script src="js/physics/spectra.js"></script>
+  <script src="js/physics/atm.js"></script>
+  <script src="js/physics/ground.js"></script>
+  <script src="js/physics/diffraction.js"></script>
+  <script src="js/physics/geometry.js"></script>
+  <script src="js/physics/propagation.js"></script>
+  <script src="js/osm/buildings.js"></script>
+  <script src="js/ui/screenshot.js"></script>
+  <script src="js/i18n/strings.js"></script>
+  <script src="js/i18n/runtime.js"></script>
+  <script src="js/app.js"></script>
 </body>
+
 </html>

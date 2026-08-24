@@ -5,16 +5,137 @@ All notable changes to this project will be documented in this file.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2026-08-24
+
+Engine and building-acquisition release. The physics engine is no longer
+hand-maintained here: it is generated from the ST-LINE site's TypeScript
+modules, which are the unit-tested implementation. Several of the fixes below
+changed **results**, not just robustness.
+
+### Added
+
+- **ISO 9613-2:2024 diffraction** as the default method. `iso9613` now maps to
+  the 2024 formulation; `iso9613-1996` remains selectable as a comparison
+  mode, and `maekawa` is unchanged.
+- **Lateral diffraction (§7.4.3) wired into the calculation.** The paths that
+  go around the two vertical edges of the barrier are now computed and
+  combined with the top-edge path per §7.4.4 (formula 25), in both the grid
+  loop and the manual-receiver pass - the two must stay aligned, otherwise a
+  manual receiver and the grid cell it sits in would report different levels.
+  The lateral path is only taken when the barrier is the dominant screen: if a
+  building shields more than the barrier does, the geometry of the barrier
+  edges no longer describes the governing path. Edges whose distance from the
+  source-receiver line exceeds 8x the top-edge clearance are rejected as
+  negligible. Active with the 2024 method only; 1996 and Maekawa ignore it.
+- **`scripts/sync-physics.mjs`** — regenerates `js/physics/*.js` from the
+  site's TypeScript via type stripping. The engine drifted between the two
+  copies for months; hand-porting acoustic formulas is exactly where a
+  transcription slip becomes a silent numerical error, so it is not done by
+  hand any more. The generated files carry a DO-NOT-EDIT banner.
+- **`scripts/check-physics.mjs`** — numerical regression guard. Pins 64
+  reference values produced with the v0.8.1 engine, verifies that `maekawa`
+  and `iso9613-1996` return them **exactly**, bounds the 1996-to-2024 spread
+  of the default method, and checks that every symbol the app uses exists.
+- **Overpass mirror chain with staggered requests.** Three endpoints ordered by
+  *measured* availability, not convention: benchmarked three times on a Treviso
+  bbox, `overpass-api.de` answers in 1.4 s when up but also returns 429 and
+  504; `maps.mail.ru` answered in every run (2.5-14 s) and is the real safety
+  net; `kumi.systems` returned 502/500 in every run and takes 30-36 s to say
+  so, so it is kept last. The next mirror joins after 900 ms without
+  abandoning the previous one; the first valid answer wins. An endpoint that
+  fails immediately moves on without waiting the stagger.
+- **In-memory response cache**, keyed on the centre quantised to ~45 m at equal
+  radius, so nudging the view or recomputing after a parameter change does not
+  repeat the query. Main defence against self-inflicted 429s.
+- **Explicit offline state.** When every mirror fails, the status line says the
+  buildings were not downloaded rather than showing "no buildings found".
+  Nothing is fabricated: presenting invented geometry as real is worse than
+  saying "no data", because the result looks plausible and is wrong.
+- **Non-obstacle filter**: `building=roof|carport|canopy` excluded in both the
+  query and the parser. They shield nothing while inflating payload and stats.
+
+### Fixed
+
+- **Multipolygon buildings were silently discarded.** The query asked for both
+  `way` and `relation`, but the parser only kept `type === 'way'`. Every
+  building mapped as a multipolygon - courtyard buildings, inner yards,
+  churches, sheds with skylights, many historic town blocks - was downloaded
+  and vanished with no warning. Measured on a real Overpass response for
+  central Treviso: **129 relations out of 1365 elements, 9.5% of the
+  buildings**, all of them reconstructible. Relations are now recomposed by
+  stitching the `outer` member ways; `inner` rings are dropped on purpose,
+  since an internal courtyard does not open an acoustic gap through the
+  building.
+- **Height chain too short, and the flat default was wrong.** `building:height`
+  and `est_height` are now read, and `roof:height` / `roof:levels` are added
+  when present - the edge that diffracts is the eaves or the ridge, not the top
+  floor slab. Storey height for the floor-count conversion is per typology (an
+  industrial storey is ~6 m, not 3). The flat 9 m fallback is replaced by a
+  per-typology default: on the same Treviso bbox **zero** buildings carried an
+  explicit height tag and only 8 had `building:levels`, so 99.4% fell back to
+  9 m - including 112 churches and 38 sheds.
+- **`levels x 3` counted as measured data.** A height derived from a floor
+  count is an estimate. The building statistics and the dashed-outline styling
+  now treat as "real height" only what comes from an explicit height tag. The
+  new `heightBasis` field records the exact tag or criterion per building.
+
+### Changed
+
+- Per-endpoint Overpass timeout is 20 s. With hedged requests the perceived
+  latency is that of the fastest mirror in flight, not the sum of the timeouts,
+  so a long timeout costs nothing - while a short one (8 s was tried) aborts
+  `maps.mail.ru` before it can answer and, with the primary returning 504, the
+  building fetch fails outright.
+
+### Numbers behind the engine change
+
+Verified with `scripts/check-physics.mjs` on a grid of 8 octave bands x 4 path
+differences, d_ss = 50 m, d_sr = 80 m:
+
+| Method | Change vs v0.8.1 |
+|---|---|
+| `maekawa` | none, all 32 values identical to 1e-6 |
+| `iso9613-1996` | none, all 32 values identical to 1e-6 |
+| `iso9613` (default, now 2024) | +0.00 to +0.21 dB |
+
+The default-method shift is below the uncertainty of any field measurement,
+but it is a real change and existing results will not reproduce bit-for-bit.
+Select `iso9613-1996` to reproduce pre-v0.9 output exactly.
+
+### Numbers behind the lateral path
+
+Geometry: source at the origin, finite barrier from (-15, 20) to (15, 20),
+hs = 0.5 m, hr = 4 m, hb = 4 m, urban-road spectrum.
+
+| Receiver | Lateral z [m] | 2024 without / with | Delta | 1996 | Maekawa |
+|---|---|---|---|---|---|
+| (0, 60) | 7.71 / 7.71 | 37.91 / 38.17 | +0.25 dB | unchanged | unchanged |
+| (0, 25) | 0 / 0 (rejected) | 52.36 / 52.36 | 0.00 dB | unchanged | unchanged |
+| (13, 25) | 0 / 2.19 | 50.86 / 51.06 | +0.20 dB | unchanged | unchanged |
+
+The lateral path always *raises* the level, which is the expected direction:
+sound also travels around the edges, so the barrier screens less than the
+top-edge path alone suggests. At (0, 25) the receiver sits close behind a long
+barrier and both edges are rejected by the 8x rule; at (13, 25) only the near
+edge contributes. Neither `iso9613-1996` nor `maekawa` moves by any amount.
+
+This brings the repo level with the web tool at stline.it/tools/calcolo-barriere.
+
+---
+
 ## [0.8.1] — 2026-05-21
 
 ### Fixed
+
 - **Insertion Loss with OSM buildings** — the *no-barrier* scenario now includes building diffraction when buildings take part in the calculation. Previously `Leq_no` was always free-field, so `IL = Leq_no − Leq_w` conflated the barrier's effect with the buildings' shielding (receivers shadowed only by a building showed a large IL even far from the barrier). Buildings now form a common baseline for both scenarios → the IL isolates the barrier's own contribution. Without buildings in the calculation, behaviour is unchanged. Applied to both the grid loop and the manual-receiver pass.
 
 ### Changed
+
 - **Repository layout: multi-file static site.** The single-file `index.html` has been split into an HTML shell plus 12 vanilla-JS modules under `js/` (`physics/{constants,spectra,atm,ground,diffraction,geometry,propagation}.js`, `osm/buildings.js`, `ui/screenshot.js`, `i18n/{strings,runtime}.js`, `app.js`). Physics, OSM logic and DOM behaviour are byte-equivalent to v0.8.1 single-file; only the file boundaries changed. **Running the site now requires a static HTTP server** (`python -m http.server 8000`, `npx serve .`, `php -S localhost:8000`); browsers refuse to execute `<script src="js/...">` from a `file://` URL.
 - **English-only UI.** The IT/EN runtime toggle and the Italian branch of the `STRINGS` dictionary have been removed. `<html lang>` is now `en`, page title and meta description are English, and the `#lang-toggle` button is gone. The `data-i18n-text` / `data-i18n-html` binding system is kept (DOM still gets filled from `STRINGS.en` at boot) so `app.js` can keep its `s.someKey` lookups unchanged.
 
 ### Technical
+
 - Synced from the ST-LINE site companion component `BarrierCalculator.astro`. Physics engine otherwise unchanged.
 
 ---
@@ -22,6 +143,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [0.8.0] — 2026-05-20
 
 ### Added
+
 - **Adaptive receiver grid** — grid bbox auto-fits source bbox + buffer per side (snapped to step). Replaces the previous fixed 300 m × 300 m square centered on the source centroid that truncated extended line/area sources.
   - Input renamed `grid-extent` → `grid-buffer`. Default 300 → 150 (buffer per side; 150 m around a 0-size point = 300 m total = legacy behavior). Range 50–800 → 25–500. i18n key `gridExtentLabel` → `gridBufferLabel`.
 - **Manual receivers (max 5)** — new panel section "9 · Ricevitori manuali" / "9 · Manual receivers". Click-to-place with crosshair + ESC to cancel; numbered cyan square-pin markers (R1..R5) draggable; per-receiver editable label + delete + "Clear all"; auto-renumber on individual delete. Computed in the same pass as the grid (reuses worst-screen logic + `firstBarrierHit`), with a results table below the stats: Label / Source dist. / Leq w-o / Leq with / IL (colored) / Status vs limit.
@@ -32,6 +154,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Defensive h=NaN fallback** — empty barrier height field no longer produces `IL = Infinity`. Falls back to `hb_total = base | 0` (= "no barrier"), calculation proceeds, warning prepended to `calc-status`. Applied to `renderCrossSection` too so the vertical cross-section doesn't draw invalid geometry.
 
 ### Changed
+
 - **`renderIsolines` signature**: now `(grid, refLat, refLng, gridXMin, gridXMax, gridYMin, gridYMax, step, viewMode)` — rectangular Nx × Ny matrix with explicit origin (the old `(x − N/2)*step` mapping had a latent ~half-step contour-overlay misregistration that is also fixed by this).
 - **OSM building tooltip**: added explicit `offset: [0, -8]` (was `{ direction: 'top', sticky: true }` only) so it sits cleanly above the polygon.
 - **Panel layout** — multi-column packing (`column-width: 232px`) instead of a CSS grid where the row height was set by the tallest section, eliminating large empty gaps under short sections. The results section (`.span-2`) spans the full width.
@@ -41,9 +164,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **`clearResult`** now takes `{ keepManual: true }` by default — clearing source/barrier or recomputing does NOT wipe hand-placed receivers; only "Reset tutto" passes `{ keepManual: false }`.
 
 ### i18n
+
 - ~25 new keys in the standalone `STRINGS` dictionary (IT + EN), wired through the existing `data-i18n-text`/`data-i18n-html` attribute system: `resultsExplainerTitle/Text`, `statILMeanSub/MaxSub/LeqWithSub/BelowSub`, `statILMeanDiff/MaxDiff/NDiff` (+ subs), `hMissingWarn`, `s9Title/Helper`, `btnAddManualReceiver`, `btnClearAllManual`, `pickStatusActive`, `manualReceiverPlaceholder`, `manualMaxReached`, `manualClearConfirm`, `manualTable*`, `manualStatus*`.
 
 ### Technical
+
 - Synced with the ST-LINE site companion component `src/components/BarrierCalculator.astro` (post-`0dbed10`). Physics engine and OSM/Overpass logic unchanged.
 - New `manual-receiver-marker` is intentionally a **square pin with pointer** (not a circle), so it doesn't visually clash with the round geolocation dot or the round grid markers.
 
@@ -52,6 +177,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [0.7.0] — 2026-05-19
 
 ### Added
+
 - Full EN UI with IT/EN runtime toggle (complete string dictionary, 117+ keys)
 - OSM buildings via Overpass API as passive obstacles (worst-screen-wins, one obstacle per source-receiver pair)
 - Spatial scene filter: only buildings within the scene bbox (source ∪ barrier ∪ receiver-grid + 10 m buffer) participate; "X of Y" participation badge
@@ -60,23 +186,27 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Spectrum info popover: description, mode-aware formula, octave-band mini bar chart
 
 ### Changed
+
 - Single-file standalone now loads Leaflet / d3-contour / html2canvas from CDN (was vendored)
 - Fluid bottom-panel layout (no internal scroll; mobile-responsive)
 - Ctrl/Cmd + wheel zoom guard with on-map hint (page scroll otherwise)
 
 ### Technical
+
 - Physics/OSM/screenshot extracted verbatim from the ST-LINE site shared modules (develop HEAD, post-ef726c7); ISO 9613-2 §7.4 + Maekawa unchanged
 - Synced with src/components/BarrierCalculator.astro
 
 ## [0.6.0] — 2026-05-18
 
 ### Added
+
 - **Filled contour bands** at 5 dB intervals (mappa acustica style) — default ON
 - **Continuous color legend** with tick marks at every 5 dB threshold (240px gradient)
 - View-mode listener: legend updates immediately when switching IL/Leq view
 - Individual receiver points now OFF by default (redundant with bands)
 
 ### Changed
+
 - Legend gradient now generated dynamically per dB step (was 3 hard-coded stops)
 - Isolines now have dark outline for readability on any background
 - Render ordering: bands (bottom) → points → isolines (top) for clarity
@@ -84,6 +214,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [0.5.0] — 2026-05-18
 
 ### Added
+
 - **Metric grid overlay** (5m / 10m / 25m, zoom-adaptive) with high-contrast colors
 - Toggle button "▦ Griglia 5m" top-left of map
 - Synchronized checkbox in sidebar "Griglia metrica (5–25m)"
@@ -91,12 +222,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Async chunked calculation**: yield to browser every 4 rows for responsive UI
 
 ### Changed
+
 - `computePropagation` refactored from sync to async with `await Promise(setTimeout(0))`
 - UI now remains interactive (pan, zoom) during calculation
 
 ## [0.4.0] — 2026-05-18
 
 ### Added
+
 - **ISO 9613-2:1996 §7.4 full screening formula** as alternative to Maekawa
   - `Dz = 10·log₁₀(3 + (C₂/λ)·C₃·z·K_met)`
   - Includes meteorological correction K_met for downwind propagation
@@ -109,12 +242,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Documentation section with formula derivations and references
 
 ### Changed
+
 - `diffraction(method, f, delta, d_ss, d_sr)` dispatcher replacing direct Maekawa call
 - README and CHANGELOG citing ISO 9613-2 explicitly
 
 ## [0.3.0] — 2026-05-18
 
 ### Added
+
 - **Vertical cross-section diagram** (SVG 800×320px) showing source → barrier → receiver geometry
 - Click-receiver pick mode for cross-section selection
 - Direct ray (dashed) vs diffracted ray (solid) visualization
@@ -125,6 +260,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [0.2.0] — 2026-05-18
 
 ### Added
+
 - **Point source** mode (third option beyond linear/areal)
 - Point source visualization with red glow effect
 - **Cursor readout panel** bottom-right showing live Leq/IL values on mouse hover
@@ -132,6 +268,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Diagnostic logs in browser console for debugging
 
 ### Changed
+
 - Barrier rendering now uses double polyline (dark outline + bright orange core)
   for visibility on any map/theme
 - Source rendering also has dark outline during drawing
@@ -144,6 +281,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [0.1.0] — 2026-05-18
 
 ### Added
+
 - Initial working prototype
 - Three source types: linear polyline, area rectangle, point
 - Spectrum presets: urban road, extraurban road, highway, train passenger,
@@ -162,5 +300,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [0.0.1] — 2026-05-18
 
 ### Added
+
 - Repository scaffolding (LICENSE, README, CONTRIBUTING, vendor setup script)
 - Placeholder `index.html` documenting planned features
